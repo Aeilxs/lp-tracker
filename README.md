@@ -9,3 +9,8 @@ docker compose up -d    # start
 docker compose down     # stoppe sans supprimer le volume
 docker compose down -v  # supprime aussi le volume
 ```
+
+## todos
+
+- [] fix test guild repo (jsp encore)
+- [] fix test match repo (injecter configservice)
