@@ -32,8 +32,33 @@ export class UnregisterCommand extends BaseSlashCommand implements SlashCommand 
         await this.assertInGuild(interaction);
         await this.assertIsAdmin(interaction);
 
-        // const gameName = interaction.options.getString('game_name', true);
-        // const tagLine = interaction.options.getString('tag_line', true);
-        // const region = interaction.options.getString('region', true);
+        const gameName = interaction.options.getString('game_name', true);
+        const tagLine = interaction.options.getString('tag_line', true);
+        const region = interaction.options.getString('region', true);
+        const playerToRemove = await this.playerRepo.findOneByGameName(gameName, tagLine, region);
+
+        if (!playerToRemove) {
+            return this.reply(
+                interaction,
+                `Player ${gameName}#${tagLine} (${region}) doesn't exist in our database.`,
+                true,
+            );
+        }
+
+        const guildId = interaction.guildId;
+        if (!guildId) {
+            return this.reply(interaction, `Error guildId is falsy`);
+        }
+
+        await this.guildRepo.removePlayerFromGuild(guildId, playerToRemove.puuid);
+        this.loggerService.verbose(`Unregistered ${gameName}#${tagLine} from guild ${guildId}`);
+
+        return this.reply(
+            interaction,
+            '```ascii\n' +
+                `- Removed from tracking: ${gameName}#${tagLine}\n` +
+                `- PUUID: ${playerToRemove.puuid}\n` +
+                '```',
+        );
     }
 }

@@ -25,6 +25,10 @@ export class PlayerRepository {
         return this.model.findOne({ puuid }).exec();
     }
 
+    async findOneByGameName(gameName: string, tagLine: string, region: string): Promise<Player | null> {
+        return this.model.findOne({ gameName, tagLine, region });
+    }
+
     async findAll(): Promise<Player[]> {
         return this.model.find().exec();
     }
