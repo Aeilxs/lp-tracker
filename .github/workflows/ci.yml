@@ -32,4 +32,4 @@ jobs:
                   MONGO_DB_NAME: dummy
                   MONGO_URI: mongodb://localhost:27017
                   SEASON_INFO: '{"year":2024,"season":1,"split":2,"preseason":false}'
-              run: npm test
+              run: npm run test -- --verbose
