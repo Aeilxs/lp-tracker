@@ -1,12 +1,9 @@
-// player.repository.ts
-
 import { QUEUE_TYPE } from '@features/riot/constants';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { Player, PlayerDocument } from './player.schema';
-import { RankedSnapshot } from './player.schema';
+import { Player, PlayerDocument, RankedSnapshot } from './player.schema';
 
 @Injectable()
 export class PlayerRepository {
@@ -40,7 +37,7 @@ export class PlayerRepository {
      * Push a ranked snapshot to a player.
      * Automatically updates the ranked state as well.
      */
-    async pushSnapshotToPlayer(puuid: string, snapshot: RankedSnapshot): Promise<Player | null> {
+    async addSnapshot(puuid: string, snapshot: RankedSnapshot): Promise<Player | null> {
         const player = await this.model.findOne({ puuid }).exec();
         if (!player) return null;
 
@@ -51,11 +48,15 @@ export class PlayerRepository {
 
         // Update ranked state
         if (snapshot.queueType === QUEUE_TYPE.RANKED_SOLO_5x5) {
-            player.ranked.soloQ = snapshot.after;
+            player.ranked.soloQ = snapshot.snapshot;
         } else if (snapshot.queueType === QUEUE_TYPE.RANKED_FLEX_SR) {
-            player.ranked.flexQ = snapshot.after;
+            player.ranked.flexQ = snapshot.snapshot;
         }
 
         return player.save();
+    }
+
+    public getModel(): Model<PlayerDocument> {
+        return this.model;
     }
 }

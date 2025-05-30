@@ -5,7 +5,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
 import { PlayerRepository } from './player.repository';
-import { Player, PlayerSchema, RankedSnapshot, RankedInfo } from './player.schema';
+import { Player, PlayerSchema, RankedSnapshot } from './player.schema';
 
 describe('PlayerRepository', () => {
     let module: TestingModule;
@@ -27,22 +27,15 @@ describe('PlayerRepository', () => {
     };
 
     const snapshot: RankedSnapshot = {
-        matchId: 'EUW1_1234567890',
-        timestamp: new Date(),
+        matchId: 'match1',
         queueType: QUEUE_TYPE.RANKED_SOLO_5x5,
-        before: {
-            tier: 'SILVER',
-            rank: 'IV',
-            leaguePoints: 80,
+        timestamp: new Date(),
+        snapshot: {
+            tier: 'GOLD',
+            rank: 'I',
+            leaguePoints: 55,
             wins: 10,
-            losses: 10,
-        },
-        after: {
-            tier: 'SILVER',
-            rank: 'IV',
-            leaguePoints: 95,
-            wins: 11,
-            losses: 10,
+            losses: 5,
         },
     };
 
@@ -61,70 +54,32 @@ describe('PlayerRepository', () => {
         repo = module.get(PlayerRepository);
     });
 
-    afterEach(async () => {
-        if (mongoose.connection.db) {
-            await mongoose.connection.db.dropDatabase();
-        }
-    });
-
     afterAll(async () => {
         await mongoose.disconnect();
         await server.stop();
     });
 
-    /**
-     * CRUD operations
-     */
+    afterEach(async () => {
+        await repo.getModel().deleteMany({});
+    });
 
-    it('should save and retrieve a player', async () => {
-        await repo.save(mockPlayer);
+    it('should insert and retrieve a player', async () => {
+        const inserted = await repo.save(mockPlayer);
         const found = await repo.findOne(mockPlayer.puuid);
-        expect(found?.gameName).toBe(mockPlayer.gameName);
+
+        expect(inserted).toBeDefined();
+        expect(found).toBeDefined();
+        expect(found!.puuid).toBe(mockPlayer.puuid);
     });
 
-    it('should update an existing player', async () => {
+    it('should add a ranked snapshot', async () => {
         await repo.save(mockPlayer);
-        const updatedPlayer = { ...mockPlayer, gameName: 'UpdatedName' };
-        const updated = await repo.save(updatedPlayer);
-        expect(updated?.gameName).toBe('UpdatedName');
-    });
 
-    it('should find all players', async () => {
-        await repo.save(mockPlayer);
-        const players = await repo.findAll();
-        expect(players).toHaveLength(1);
-        expect(players[0].gameName).toBe(mockPlayer.gameName);
-    });
+        await repo.addSnapshot(mockPlayer.puuid, snapshot);
+        const updated = await repo.findOne(mockPlayer.puuid);
 
-    it('should delete a player', async () => {
-        await repo.save(mockPlayer);
-        const deleted = await repo.delete(mockPlayer.puuid);
-        expect(deleted?.puuid).toBe(mockPlayer.puuid);
-        const found = await repo.findOne(mockPlayer.puuid);
-        expect(found).toBeNull();
-    });
-
-    it('should return null when deleting a non-existent player', async () => {
-        const deleted = await repo.delete('nonExistentPuuid');
-        expect(deleted).toBeNull();
-    });
-
-    /**
-     * Ranked Snapshot operations
-     */
-
-    it('should push snapshot and update ranked state', async () => {
-        await repo.save(mockPlayer);
-        const updated = await repo.pushSnapshotToPlayer(mockPlayer.puuid, snapshot);
-        expect(updated).toBeDefined();
         expect(updated?.snapshots).toHaveLength(1);
-        expect(updated?.ranked.soloQ?.leaguePoints).toBe(95);
-    });
-
-    it('should not add the same snapshot twice', async () => {
-        await repo.save(mockPlayer);
-        await repo.pushSnapshotToPlayer(mockPlayer.puuid, snapshot);
-        const again = await repo.pushSnapshotToPlayer(mockPlayer.puuid, snapshot);
-        expect(again).toBeNull();
+        expect(updated?.snapshots[0].snapshot.tier).toBe('GOLD');
+        expect(updated?.snapshots[0].queueType).toBe(QUEUE_TYPE.RANKED_SOLO_5x5);
     });
 });

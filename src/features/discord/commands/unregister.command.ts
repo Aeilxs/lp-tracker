@@ -29,14 +29,11 @@ export class UnregisterCommand extends BaseSlashCommand implements SlashCommand 
         ) as SlashCommandBuilder;
 
     async execute(interaction: ChatInputCommandInteraction) {
-        const guildId = interaction.guildId;
-        if (!guildId) return this.reply(interaction, 'This command can only be used in a server.', true);
+        await this.assertInGuild(interaction);
+        await this.assertIsAdmin(interaction);
 
-        if (this.isAdmin(interaction)) {
-        }
-
-        const gameName = interaction.options.getString('game_name', true);
-        const tagLine = interaction.options.getString('tag_line', true);
-        const region = interaction.options.getString('region', true);
+        // const gameName = interaction.options.getString('game_name', true);
+        // const tagLine = interaction.options.getString('tag_line', true);
+        // const region = interaction.options.getString('region', true);
     }
 }

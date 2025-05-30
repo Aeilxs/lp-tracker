@@ -1,18 +1,62 @@
 # LP TRACKER
 
-- [invite url](https://discord.com/oauth2/authorize?client_id=1377617644185845852&permissions=2147600400&integration_type=0&scope=bot+applications.commands)
+Discord bot to track League of Legends ranked progress (LP, matches, performance, etc.).
 
-## DB (container local)
+[→ Invite the bot](https://discord.com/oauth2/authorize?client_id=1377617644185845852&permissions=2147600400&integration_type=0&scope=bot+applications.commands)
 
-```sh
-docker compose up -d    # start
-docker compose down     # stoppe sans supprimer le volume
-docker compose down -v  # supprime aussi le volume
+---
 
-npx eslint . --ext .ts --fix   # trier les imports
+## 🧱 Local Development
+
+- Start server (watchmode)
+
+```bash
+npm install;
+npm run start:dev;
 ```
 
-## todos
+- Database cmds
 
-- [] fix test guild repo (jsp encore)
-- [] fix test match repo (injecter configservice)
+```bash
+docker compose up -d     # Start MongoDB container
+docker compose down      # Stop container but keep data
+docker compose down -v   # Stop and delete container + volume
+```
+
+### Code Quality
+
+```bash
+npx eslint . --ext .ts --fix   # Lint & fix TypeScript files
+```
+
+---
+
+## 🧪 Tests
+
+Todo
+
+---
+
+## 🛠️ Todos
+
+- [ ] ✅ Test properly
+- [ ] 🛠️ Add support for automatic ranked LP snapshots
+- [ ] 🛠️ Add command to fetch match history
+- [ ] 🔐 Improve role-based access (admin-only commands)
+- [ ] 📦 Add CI/CD (tests + lint)
+- [ ] 📜 Improve Discord command usage/help
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── config/             # Configuration layer (env vars, ConfigService abstraction)
+├── features/           # features grouped by responsibility
+│   ├── discord/        # Discord bot integration: commands, events, client setup
+│   ├── riot/           # Riot API abstraction: typed DTOs, external service logic
+│   └── tracker/        # Core tracking logic: match polling, event emitters
+├── persistence/        # Database layer: Mongoose schemas and repositories
+├── logger/             # Application-wide logger based on pino
+```

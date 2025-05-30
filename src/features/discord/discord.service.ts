@@ -2,7 +2,7 @@ import { ConfigService } from '@config/config.service';
 import { LoggerService } from '@logger/logger.service';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Client, GatewayIntentBits, ChatInputCommandInteraction, TextChannel, Interaction } from 'discord.js';
+import { Client, GatewayIntentBits, Interaction } from 'discord.js';
 
 import { CommandRegistryService } from './commands/command-registry.service';
 import { publishSlashCommands } from './commands/publishCommands';
@@ -31,15 +31,19 @@ export class DiscordService implements OnModuleInit {
 
         try {
             await command.execute(interaction);
-        } catch (error) {
-            this.loggerService.error(`Error while executing /${interaction.commandName}: ${error.message}`);
-            await interaction.reply({ content: 'An error occurred.', ephemeral: true });
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            this.loggerService.error(`Error while executing /${interaction.commandName}: ${msg}`);
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: 'An error occurred.', ephemeral: true });
+            }
         }
     }
 
     @OnEvent('tracker.matchFound')
-    async handleMatchFound(payload: { matchId: string; guildId: string; playerId: string }) {
-        // TODO: implement match tracking logic
+    handleMatchFound(payload: { matchId: string; guildId: string; playerId: string }) {
+        // TODO: implement
+        console.log(payload);
     }
 
     async onModuleInit() {
@@ -48,41 +52,48 @@ export class DiscordService implements OnModuleInit {
     }
 
     private async setup() {
-        this.client.once('ready', async () => {
-            const clientId = this.client.user?.id;
-            if (!clientId) {
-                this.loggerService.error('Discord client ID is not available.');
-                return;
-            }
+        this.client.once('ready', () => {
+            void (async () => {
+                const clientId = this.client.user?.id;
+                if (!clientId) {
+                    this.loggerService.error('Discord client ID is not available.');
+                    return;
+                }
 
-            this.loggerService.log(`Discord bot is online as ${this.client.user?.tag}`);
+                this.loggerService.log(`Discord bot is online as ${this.client.user?.tag}`);
 
-            await publishSlashCommands(
-                this.loggerService,
-                this.configService.discordToken,
-                clientId,
-                this.configService.discordTestGuildId,
-                this.commandRegistry,
-            );
+                await publishSlashCommands(
+                    this.loggerService,
+                    this.configService.discordToken,
+                    clientId,
+                    this.configService.discordTestGuildId,
+                    this.commandRegistry,
+                );
+            })();
         });
 
-        this.client.on('interactionCreate', this.onInteraction.bind(this));
+        this.client.on('interactionCreate', (i: Interaction) => {
+            void this.onInteraction(i);
+        });
 
-        this.client.on('guildCreate', async (guild) => {
-            this.loggerService.log(`Bot added to guild: ${guild.name}`);
-            try {
-                const channel = await guild.channels.create({
-                    name: DISCORD_CHANNEL_NAME,
-                    type: 0,
-                    reason: 'Automatic channel creation for lp-tracker',
-                });
+        this.client.on('guildCreate', (guild) => {
+            void (async () => {
+                this.loggerService.log(`Bot added to guild: ${guild.name}`);
+                try {
+                    const channel = await guild.channels.create({
+                        name: DISCORD_CHANNEL_NAME,
+                        type: 0,
+                        reason: 'Automatic channel creation for lp-tracker',
+                    });
 
-                if (channel.isTextBased()) {
-                    await channel.send(`Hello! I am lp-tracker :).`);
+                    if (channel.isTextBased()) {
+                        await channel.send(`Hello! I am lp-tracker :).`);
+                    }
+                } catch (err: unknown) {
+                    const msg = err instanceof Error ? err.message : 'Unknown error';
+                    this.loggerService.error(`Cannot create channel: ${msg}`);
                 }
-            } catch (err) {
-                this.loggerService.error(`Cannot create channel: ${err.message}`);
-            }
+            })();
         });
 
         await this.client.login(this.configService.discordToken);

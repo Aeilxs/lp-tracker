@@ -4,7 +4,6 @@
  */
 
 import { ConfigService } from '@config/config.service';
-import { RiotService } from '@features/riot/riot.service';
 import { LoggerService } from '@logger/logger.service';
 import { NestFactory } from '@nestjs/core';
 
@@ -19,4 +18,7 @@ async function bootstrap() {
     config.dump();
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+    console.error('Failed to bootstrap app:', err);
+    process.exit(1);
+});

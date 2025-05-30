@@ -13,13 +13,14 @@ export class MatchRepository {
         private readonly configService: ConfigService,
     ) {}
 
-    async save(match: Match): Promise<Match> {
-        const existing = await this.model.findOne({ matchId: match.matchId }).exec();
+    async save(matchId: string, region: string, data: Record<string, any>): Promise<Match> {
+        const existing = await this.model.findOne({ matchId }).exec();
         if (existing) {
-            Object.assign(existing, match);
+            existing.data = data;
+            existing.region = region;
             return existing.save();
         }
-        return this.model.create(match);
+        return this.model.create({ matchId, region, data });
     }
 
     async findOne(matchId: string): Promise<Match | null> {

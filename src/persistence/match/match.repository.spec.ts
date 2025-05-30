@@ -11,19 +11,9 @@ describe('MatchRepository', () => {
     let repo: MatchRepository;
     let server: MongoMemoryServer;
 
-    const mockMatch: Match = {
-        matchId: 'EUW1_123456789',
-        gameCreation: Date.now(),
-        gameDuration: 1800,
-        gameEndTimestamp: Date.now() + 1800000,
-        gameMode: 'CLASSIC',
-        gameType: 'MATCHED_GAME',
-        queueId: 420,
-        mapId: 11,
-        platformId: 'EUW1',
-        participants: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    const mockData = {
+        info: { gameId: 12345, participants: [] },
+        metadata: { matchId: 'EUW1_123456789', participants: ['puuid1'] },
     };
 
     beforeAll(async () => {
@@ -52,9 +42,13 @@ describe('MatchRepository', () => {
         await server.stop();
     });
 
-    it('should save and retrieve a match', async () => {
-        await repo.save(mockMatch);
-        const found = await repo.findOne(mockMatch.matchId);
-        expect(found?.queueId).toBe(420);
+    it('should save and retrieve a raw match', async () => {
+        const matchId = 'EUW1_123456789';
+        const region = 'euw1';
+        await repo.save(matchId, region, mockData);
+        const found = await repo.findOne(matchId);
+
+        expect(found?.data.metadata.matchId).toBe(matchId);
+        expect(found?.region).toBe(region);
     });
 });

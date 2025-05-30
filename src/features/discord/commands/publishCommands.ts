@@ -23,8 +23,9 @@ export async function publishSlashCommands(
         loggerService.log(`Publishing slash commands (scope: ${isTest ? 'guild' : 'global'})...`);
         await rest.put(route, { body: commandData });
         loggerService.log(`Slash commands successfully registered (${commandData.length})`);
-    } catch (error) {
-        loggerService.error('Failed to publish slash commands:', error);
-        throw new Error(`Failed to publish slash commands: ${error}`);
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        loggerService.error('Failed to publish slash commands:', msg);
+        throw new Error(`Failed to publish slash commands: ${msg}`);
     }
 }

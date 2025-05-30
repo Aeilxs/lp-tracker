@@ -123,14 +123,15 @@ export class ConfigService {
  * @param obj - The object to validate
  * @returns True if the object is a valid ISeasonInfo, false otherwise.
  */
-function isSeasonInfo(obj: any): obj is SeasonInfo {
+function isSeasonInfo(obj: unknown): obj is SeasonInfo {
     if (typeof obj !== 'object' || obj === null) return false;
 
+    const o = obj as Record<string, unknown>;
     const allowedKeys = ['year', 'season', 'split', 'preseason'];
-    const keys = Object.keys(obj);
+    const keys = Object.keys(o);
     if (!keys.every((key) => allowedKeys.includes(key))) return false;
 
-    const { year, season, split, preseason } = obj;
+    const { year, season, split, preseason } = o;
 
     return (
         typeof year === 'number' &&

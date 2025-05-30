@@ -1,6 +1,6 @@
+import { ConfigService } from '@config/config.service';
 import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 import pino, { Logger as PinoInstance } from 'pino';
-import { ConfigService } from 'src/config/config.service';
 
 @Injectable()
 export class LoggerService implements NestLoggerService {
@@ -26,31 +26,32 @@ export class LoggerService implements NestLoggerService {
         this.logger = baseLogger;
     }
 
-    setContext(context: string) {
-        this.logger = this.logger.child({ context });
+    setContext(context: string): void {
+        this.logger = this.logger.child({ context }) as PinoInstance;
     }
 
-    log(message: any) {
+    log(message: string | Record<string, unknown>): void {
         this.logger.info(message);
     }
 
-    error(message: any, trace?: string) {
-        this.logger.error({ msg: message, trace });
+    error(message: string | Error, trace?: string): void {
+        const msg = message instanceof Error ? message.message : message;
+        this.logger.error({ msg, trace });
     }
 
-    warn(message: any) {
+    warn(message: string | Record<string, unknown>): void {
         this.logger.warn(message);
     }
 
-    debug(message: any) {
+    debug(message: string | Record<string, unknown>): void {
         this.logger.debug(message);
     }
 
-    verbose(message: any) {
+    verbose(message: string | Record<string, unknown>): void {
         this.logger.trace(message);
     }
 
-    printBanner(title: string, entries: [string, string][], width: number) {
+    printBanner(title: string, entries: [string, string][], width: number): void {
         const contentWidth = width - 4;
 
         const center = (text: string) => {
@@ -61,7 +62,6 @@ export class LoggerService implements NestLoggerService {
         };
 
         const line = (label: string, value: string) => {
-            // both label and value are empty => return empty line
             if (label === '' && value === '') return `│ ${' '.repeat(contentWidth)} │`;
 
             const content = `${label} : ${value}`;

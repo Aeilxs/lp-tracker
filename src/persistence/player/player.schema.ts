@@ -18,8 +18,7 @@ export class RankedSnapshot {
     @Prop({ required: true }) matchId: string;
     @Prop({ required: true }) timestamp: Date;
     @Prop({ required: true, enum: Object.values(QUEUE_TYPE) }) queueType: QUEUE_TYPE;
-    @Prop({ type: RankedInfoSchema, required: true }) before: RankedInfo;
-    @Prop({ type: RankedInfoSchema, required: true }) after: RankedInfo;
+    @Prop({ type: RankedInfoSchema, required: true }) snapshot: RankedInfo;
 }
 export const RankedSnapshotSchema = SchemaFactory.createForClass(RankedSnapshot);
 
