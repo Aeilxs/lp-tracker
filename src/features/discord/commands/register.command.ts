@@ -1,21 +1,25 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Injectable } from '@nestjs/common';
 import { SlashCommand } from './command.interface';
-import { LoggerService } from '@logger/logger.service';
 import { RiotService } from '@features/riot/riot.service';
 import { Player } from '@persistence/player/player.schema';
 import { PlayerRepository } from '@persistence/player/player.repository';
 import { GuildRepository } from '@persistence/guild/guild.repository';
 import { Guild } from '@persistence/guild/guild.schema';
+import { LoggerService } from '@logger/logger.service';
+import { BaseSlashCommand } from './command.base';
 
 @Injectable()
-export class RegisterCommand implements SlashCommand {
+export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
     constructor(
-        private readonly logger: LoggerService,
+        logger: LoggerService,
         private readonly riotService: RiotService,
         private readonly playerRepo: PlayerRepository,
         private readonly guildRepo: GuildRepository,
-    ) {}
+    ) {
+        super(logger);
+    
+    }
 
     public readonly data = new SlashCommandBuilder()
         .setName('register')
@@ -27,7 +31,9 @@ export class RegisterCommand implements SlashCommand {
         ) as SlashCommandBuilder;
 
     async execute(interaction: ChatInputCommandInteraction) {
-        this.logger.verbose(`RegisterCommand run by ${interaction.user.username} in guild ${interaction.guildId}`);
+        this.loggerService.verbose(
+            `RegisterCommand run by ${interaction.user.username} in guild ${interaction.guildId}`,
+        );
         const guildId = interaction.guildId;
 
         if (!guildId) {
@@ -54,13 +60,13 @@ export class RegisterCommand implements SlashCommand {
 
         const existing = await this.playerRepo.findOne(profile.account.puuid);
         if (existing) {
-            this.logger.verbose(`Player ${gameName}#${tagLine} already registered in db.`);
+            this.loggerService.verbose(`Player ${gameName}#${tagLine} already registered in db.`);
             return this.reply(interaction, this.formatResponse(existing, true), true);
         }
 
         const player = await this.playerRepo.save(Player.fromDto(profile, region));
         if (!player) {
-            this.logger.error(`Failed to register player ${gameName}#${tagLine} in region ${region}.`);
+            this.loggerService.error(`Failed to register player ${gameName}#${tagLine} in region ${region}.`);
             return this.reply(
                 interaction,
                 `Failed to register player \`${gameName}#${tagLine}\` in region **${region}**.`,
@@ -80,19 +86,12 @@ export class RegisterCommand implements SlashCommand {
         if (!guild) {
             guild = await this.guildRepo.save(Guild.fromGuildId(guildId));
             if (!guild) {
-                this.logger.error(`Failed to create guild entry for ${guildId}.`);
+                this.loggerService.error(`Failed to create guild entry for ${guildId}.`);
                 await this.reply(interaction, 'Failed to register your guild. Please try again later.', true);
                 return null;
             }
         }
         return guild;
-    }
-
-    private async reply(interaction: ChatInputCommandInteraction, content: string, ephemeral = false) {
-        await interaction.reply({
-            content,
-            flags: ephemeral ? MessageFlags.Ephemeral : undefined,
-        });
     }
 
     private formatResponse(p: Player, existing = false): string {
