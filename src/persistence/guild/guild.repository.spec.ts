@@ -31,9 +31,14 @@ describe('GuildRepository', () => {
         repo = module.get<GuildRepository>(GuildRepository);
     });
 
+    afterEach(async () => {
+        if (mongoose.connection.db) {
+            await mongoose.connection.db.dropDatabase();
+        }
+    });
+
     afterAll(async () => {
-        await mongoose.connection.dropDatabase();
-        await mongoose.connection.close();
+        await mongoose.disconnect();
         await mongod.stop();
     });
 

@@ -10,7 +10,7 @@ import { Player, PlayerSchema, RankedSnapshot } from './player.schema';
 describe('PlayerRepository', () => {
     let module: TestingModule;
     let repo: PlayerRepository;
-    let server: MongoMemoryServer;
+    let mongod: MongoMemoryServer;
 
     const mockPlayer: Player = {
         puuid: 'abc123',
@@ -40,8 +40,8 @@ describe('PlayerRepository', () => {
     };
 
     beforeAll(async () => {
-        server = await MongoMemoryServer.create();
-        const uri = server.getUri();
+        mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
 
         module = await Test.createTestingModule({
             imports: [
@@ -56,11 +56,11 @@ describe('PlayerRepository', () => {
 
     afterAll(async () => {
         await mongoose.disconnect();
-        await server.stop();
+        await mongod.stop();
     });
 
     afterEach(async () => {
-        await repo.getModel().deleteMany({});
+        await mongoose.connection.db?.dropDatabase();
     });
 
     it('should insert and retrieve a player', async () => {

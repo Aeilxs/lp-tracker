@@ -55,8 +55,4 @@ export class PlayerRepository {
 
         return player.save();
     }
-
-    public getModel(): Model<PlayerDocument> {
-        return this.model;
-    }
 }

@@ -1,3 +1,4 @@
+import { ConfigService } from '@config/config.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -9,7 +10,7 @@ import { Match, MatchSchema } from './match.schema';
 describe('MatchRepository', () => {
     let module: TestingModule;
     let repo: MatchRepository;
-    let server: MongoMemoryServer;
+    let mongod: MongoMemoryServer;
 
     const mockData = {
         info: { gameId: 12345, participants: [] },
@@ -17,15 +18,21 @@ describe('MatchRepository', () => {
     };
 
     beforeAll(async () => {
-        server = await MongoMemoryServer.create();
-        const uri = server.getUri();
+        mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
 
         module = await Test.createTestingModule({
             imports: [
                 MongooseModule.forRoot(uri),
                 MongooseModule.forFeature([{ name: Match.name, schema: MatchSchema }]),
             ],
-            providers: [MatchRepository],
+            providers: [
+                MatchRepository,
+                {
+                    provide: ConfigService,
+                    useValue: { seasonInfo: { year: 2024, season: 1, split: 2, preseason: false } },
+                },
+            ],
         }).compile();
 
         repo = module.get(MatchRepository);
@@ -39,16 +46,18 @@ describe('MatchRepository', () => {
 
     afterAll(async () => {
         await mongoose.disconnect();
-        await server.stop();
+        await mongod.stop();
     });
 
     it('should save and retrieve a raw match', async () => {
         const matchId = 'EUW1_123456789';
-        const region = 'euw1';
-        await repo.save(matchId, region, mockData);
+        await repo.save(matchId, mockData);
         const found = await repo.findOne(matchId);
 
         expect(found?.data.metadata.matchId).toBe(matchId);
-        expect(found?.region).toBe(region);
+        expect(found?.seasonInfo.preseason).toBe(false);
+        expect(found?.seasonInfo.season).toBe(1);
+        expect(found?.seasonInfo.split).toBe(2);
+        expect(found?.seasonInfo.year).toBe(2024);
     });
 });

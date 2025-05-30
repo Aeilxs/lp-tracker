@@ -55,6 +55,25 @@ describe('ConfigService', () => {
         service = module.get(ConfigService);
     });
 
+    afterAll(() => {
+        // Nettoyage des envs potentiellement polluantes
+        const keysToRemove = [
+            'SEASON_INFO',
+            'NODE_ENV',
+            'PORT',
+            'LOG_LEVEL',
+            'RIOT_API_KEY',
+            'DISCORD_TOKEN',
+            'DISCORD_TEST_GUILD_ID',
+            'MONGO_DB_NAME',
+            'MONGO_URI',
+        ];
+
+        for (const key of keysToRemove) {
+            delete process.env[key];
+        }
+    });
+
     it('should be defined and return expected config values', () => {
         expect(service).toBeDefined();
         expect(service.port).toBe(3000);
