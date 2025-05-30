@@ -2,11 +2,12 @@
  * @file src/core/riot/riot.service.ts
  */
 
+import { HttpService } from '@nestjs/axios';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AxiosError } from 'axios';
-import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { LoggerService } from 'src/logger/logger.service';
+
 import { QUEUE_ID, QUEUE_TYPE } from './constants';
 import { AccountDto, ActiveGameDto, MatchDto, PlayerProfileDto, RankedInfoDto, SummonerDto } from './dtos';
 

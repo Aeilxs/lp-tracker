@@ -1,13 +1,14 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import { Injectable } from '@nestjs/common';
-import { SlashCommand } from './command.interface';
 import { RiotService } from '@features/riot/riot.service';
-import { Player } from '@persistence/player/player.schema';
-import { PlayerRepository } from '@persistence/player/player.repository';
+import { LoggerService } from '@logger/logger.service';
+import { Injectable } from '@nestjs/common';
 import { GuildRepository } from '@persistence/guild/guild.repository';
 import { Guild } from '@persistence/guild/guild.schema';
-import { LoggerService } from '@logger/logger.service';
+import { PlayerRepository } from '@persistence/player/player.repository';
+import { Player } from '@persistence/player/player.schema';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+
 import { BaseSlashCommand } from './command.base';
+import { SlashCommand } from './command.interface';
 
 @Injectable()
 export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
@@ -18,7 +19,6 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
         private readonly guildRepo: GuildRepository,
     ) {
         super(logger);
-    
     }
 
     public readonly data = new SlashCommandBuilder()

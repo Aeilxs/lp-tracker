@@ -3,9 +3,10 @@
  */
 
 import { Global, Module } from '@nestjs/common';
-import { LoggerService } from './logger.service';
 import { ConfigModule } from 'src/config/config.module';
 import { ConfigService } from 'src/config/config.service';
+
+import { LoggerService } from './logger.service';
 
 @Global()
 @Module({

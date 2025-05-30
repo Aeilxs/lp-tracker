@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
-import { Match, MatchSchema } from './match.schema';
 import { MatchRepository } from './match.repository';
+import { Match, MatchSchema } from './match.schema';
 
 describe('MatchRepository', () => {
     let module: TestingModule;

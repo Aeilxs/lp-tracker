@@ -1,11 +1,11 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Client, GatewayIntentBits, ChatInputCommandInteraction, TextChannel, Interaction } from 'discord.js';
 import { ConfigService } from '@config/config.service';
 import { LoggerService } from '@logger/logger.service';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { Client, GatewayIntentBits, ChatInputCommandInteraction, TextChannel, Interaction } from 'discord.js';
 
-import { publishSlashCommands } from './commands/publishCommands';
 import { CommandRegistryService } from './commands/command-registry.service';
+import { publishSlashCommands } from './commands/publishCommands';
 import { DISCORD_CHANNEL_NAME } from './constants';
 
 @Injectable()

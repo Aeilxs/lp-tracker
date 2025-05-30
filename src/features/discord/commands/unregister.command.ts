@@ -4,8 +4,9 @@ import { Injectable } from '@nestjs/common';
 import { GuildRepository } from '@persistence/guild/guild.repository';
 import { PlayerRepository } from '@persistence/player/player.repository';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { SlashCommand } from './command.interface';
+
 import { BaseSlashCommand } from './command.base';
+import { SlashCommand } from './command.interface';
 
 @Injectable()
 export class UnregisterCommand extends BaseSlashCommand implements SlashCommand {

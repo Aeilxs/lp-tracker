@@ -5,6 +5,7 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
+
 import { configSchema } from './config.schema';
 import { ConfigService } from './config.service';
 import { DEVELOPMENT, PRODUCTION } from './constants';

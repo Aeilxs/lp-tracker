@@ -2,11 +2,12 @@
  * @file src/core/riot/riot.module.ts
  */
 
-import { Module } from '@nestjs/common';
 import { ConfigModule } from '@config/config.module';
-import { HttpModule } from '@nestjs/axios';
-import { RiotService } from './riot.service';
 import { ConfigService } from '@config/config.service';
+import { HttpModule } from '@nestjs/axios';
+import { Module } from '@nestjs/common';
+
+import { RiotService } from './riot.service';
 
 @Module({
     imports: [

@@ -2,10 +2,11 @@
  * @file config/config.service.spec.ts
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { ConfigService } from './config.service';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { configSchema } from './config.schema';
+import { ConfigService } from './config.service';
 import { SeasonInfo } from './constants';
 
 describe('ConfigService', () => {

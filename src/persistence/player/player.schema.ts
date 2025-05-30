@@ -1,7 +1,7 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
 import { QUEUE_TYPE } from '@features/riot/constants';
 import { PlayerProfileDto } from '@features/riot/dtos';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument } from 'mongoose';
 
 @Schema({ _id: false })
 export class RankedInfo {

@@ -1,11 +1,12 @@
 // player.repository.ts
 
+import { QUEUE_TYPE } from '@features/riot/constants';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+
 import { Player, PlayerDocument } from './player.schema';
 import { RankedSnapshot } from './player.schema';
-import { QUEUE_TYPE } from '@features/riot/constants';
 
 @Injectable()
 export class PlayerRepository {

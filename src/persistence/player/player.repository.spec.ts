@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { MongooseModule } from '@nestjs/mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { Player, PlayerSchema, RankedSnapshot, RankedInfo } from './player.schema';
-import { PlayerRepository } from './player.repository';
-
-import mongoose from 'mongoose';
 import { QUEUE_TYPE } from '@features/riot/constants';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Test, TestingModule } from '@nestjs/testing';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from 'mongoose';
+
+import { PlayerRepository } from './player.repository';
+import { Player, PlayerSchema, RankedSnapshot, RankedInfo } from './player.schema';
 
 describe('PlayerRepository', () => {
     let module: TestingModule;

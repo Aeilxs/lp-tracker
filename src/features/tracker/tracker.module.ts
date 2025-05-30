@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
-import { TrackerService } from './tracker.service';
 import { RiotModule } from '@features/riot/riot.module';
+import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { GuildPersistenceModule } from '@persistence/guild/guild.module';
 import { MatchPersistenceModule } from '@persistence/match/match.module';
 import { PlayerPersistenceModule } from '@persistence/player/player.module';
-import { GuildPersistenceModule } from '@persistence/guild/guild.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+
+import { TrackerService } from './tracker.service';
 
 @Module({
     imports: [

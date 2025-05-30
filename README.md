@@ -8,6 +8,8 @@
 docker compose up -d    # start
 docker compose down     # stoppe sans supprimer le volume
 docker compose down -v  # supprime aussi le volume
+
+npx eslint . --ext .ts --fix   # trier les imports
 ```
 
 ## todos

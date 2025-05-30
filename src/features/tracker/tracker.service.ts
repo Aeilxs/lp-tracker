@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
 import { RiotService } from '@features/riot/riot.service';
-import { PlayerRepository } from '@persistence/player/player.repository';
-import { MatchRepository } from '@persistence/match/match.repository';
-import { GuildRepository } from '@persistence/guild/guild.repository';
+import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GuildRepository } from '@persistence/guild/guild.repository';
+import { MatchRepository } from '@persistence/match/match.repository';
+import { PlayerRepository } from '@persistence/player/player.repository';
 
 @Injectable()
 export class TrackerService {

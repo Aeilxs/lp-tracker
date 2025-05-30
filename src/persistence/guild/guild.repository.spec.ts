@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
-import { Guild, GuildSchema } from './guild.schema';
 import { GuildRepository } from './guild.repository';
+import { Guild, GuildSchema } from './guild.schema';
 
 describe('GuildRepository', () => {
     let module: TestingModule;

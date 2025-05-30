@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from 'discord.js';
+
 import { SlashCommand } from './command.interface';
 
 @Injectable()

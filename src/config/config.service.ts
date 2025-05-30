@@ -2,6 +2,9 @@
  * @file config/config.service.ts
  */
 
+import { Injectable } from '@nestjs/common';
+import { ConfigService as NestConfigService } from '@nestjs/config';
+
 import {
     DISCORD_TOKEN,
     DISCORD_TEST_GUILD_ID,
@@ -16,9 +19,6 @@ import {
     SEASON_INFO,
     SeasonInfo,
 } from './constants';
-
-import { Injectable } from '@nestjs/common';
-import { ConfigService as NestConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ConfigService {

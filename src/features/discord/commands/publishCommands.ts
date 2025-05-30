@@ -1,6 +1,7 @@
 import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v10';
 import { LoggerService } from '@logger/logger.service';
+import { Routes } from 'discord-api-types/v10';
+
 import { CommandRegistryService } from './command-registry.service';
 
 export async function publishSlashCommands(

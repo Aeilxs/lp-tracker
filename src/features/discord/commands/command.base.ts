@@ -1,6 +1,5 @@
-import { ChatInputCommandInteraction, GuildMember, MessageFlags } from 'discord.js';
-
 import { LoggerService } from '@logger/logger.service';
+import { ChatInputCommandInteraction, GuildMember, MessageFlags } from 'discord.js';
 
 export abstract class BaseSlashCommand {
     constructor(protected readonly loggerService: LoggerService) {}

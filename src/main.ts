@@ -3,11 +3,11 @@
  * @description Entry point.
  */
 
-import { NestFactory } from '@nestjs/core';
-
-import { LoggerService } from '@logger/logger.service';
 import { ConfigService } from '@config/config.service';
 import { RiotService } from '@features/riot/riot.service';
+import { LoggerService } from '@logger/logger.service';
+import { NestFactory } from '@nestjs/core';
+
 import { AppModule } from './app.module';
 
 async function bootstrap() {
