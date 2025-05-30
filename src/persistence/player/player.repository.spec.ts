@@ -63,9 +63,18 @@ describe('PlayerRepository', () => {
         await mongoose.connection.db?.dropDatabase();
     });
 
-    it('should insert and retrieve a player', async () => {
+    it('should insert and retrieve a player with puuid', async () => {
         const inserted = await repo.save(mockPlayer);
         const found = await repo.findOne(mockPlayer.puuid);
+
+        expect(inserted).toBeDefined();
+        expect(found).toBeDefined();
+        expect(found!.puuid).toBe(mockPlayer.puuid);
+    });
+
+    it('should retrieve a player with his gameName#tagLine and region', async () => {
+        const inserted = await repo.save(mockPlayer);
+        const found = await repo.findOneByGameName(mockPlayer.gameName, mockPlayer.tagLine, mockPlayer.region);
 
         expect(inserted).toBeDefined();
         expect(found).toBeDefined();
