@@ -27,14 +27,14 @@ export class GuildRepository {
 
     async addPlayerToGuild(guildId: string, puuid: string): Promise<Guild | null> {
         const guild = await this.model
-            .findOneAndUpdate({ guildId }, { $addToSet: { trackedPuids: puuid } }, { new: true, upsert: true })
+            .findOneAndUpdate({ guildId }, { $addToSet: { puuids: puuid } }, { new: true, upsert: true })
             .exec();
 
         return guild;
     }
 
     async removePlayerFromGuild(guildId: string, puuid: string): Promise<Guild | null> {
-        return this.model.findOneAndUpdate({ guildId }, { $pull: { trackedPuids: puuid } }, { new: true }).exec();
+        return this.model.findOneAndUpdate({ guildId }, { $pull: { puuids: puuid } }, { new: true }).exec();
     }
 
     async findAll(): Promise<Guild[]> {
