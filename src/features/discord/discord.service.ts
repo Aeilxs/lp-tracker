@@ -1,7 +1,6 @@
 import { ConfigService } from '@config/config.service';
 import { LoggerService } from '@logger/logger.service';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
 import { Client, GatewayIntentBits, Interaction } from 'discord.js';
 
 import { CommandRegistryService } from './commands/command-registry.service';
@@ -38,12 +37,6 @@ export class DiscordService implements OnModuleInit {
                 await interaction.reply({ content: 'An error occurred.', ephemeral: true });
             }
         }
-    }
-
-    @OnEvent('tracker.matchFound')
-    handleMatchFound(payload: { matchId: string; guildId: string; playerId: string }) {
-        // TODO: implement
-        console.log(payload);
     }
 
     async onModuleInit() {

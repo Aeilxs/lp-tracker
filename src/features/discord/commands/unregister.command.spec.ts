@@ -1,13 +1,17 @@
-import { Test } from '@nestjs/testing';
-import { UnregisterCommand } from './unregister.command';
-import { LoggerService } from '@logger/logger.service';
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { RiotService } from '@features/riot/riot.service';
-import { PlayerRepository } from '@persistence/player/player.repository';
+import { LoggerService } from '@logger/logger.service';
+import { Test } from '@nestjs/testing';
 import { GuildRepository } from '@persistence/guild/guild.repository';
-import { createMockInteraction } from '../../../test-utils/command-interaction.mock';
-import { MessageFlags } from 'discord.js';
-import { Player } from '@persistence/player/player.schema';
 import { Guild } from '@persistence/guild/guild.schema';
+import { PlayerRepository } from '@persistence/player/player.repository';
+import { Player } from '@persistence/player/player.schema';
+import { InteractionFactory } from '@test-utils/command-interaction-factory.mock';
+import { ProfileFactory } from '@test-utils/profile-factory.mock';
+import { MessageFlags } from 'discord.js';
+
+import { UnregisterCommand } from './unregister.command';
 
 describe('UnregisterCommand', () => {
     let command: UnregisterCommand;
@@ -49,11 +53,11 @@ describe('UnregisterCommand', () => {
     });
 
     it('should return error if player is not found', async () => {
-        const interaction = createMockInteraction();
+        expect(true).toBe(true);
+        const interaction = InteractionFactory.createMockInteraction();
+
         jest.spyOn(playerRepo, 'findOneByGameName').mockResolvedValue(null);
-
         await command.execute(interaction);
-
         expect(interaction.reply).toHaveBeenCalledWith({
             content: expect.stringContaining("doesn't exist"),
             flags: MessageFlags.Ephemeral,
@@ -61,12 +65,24 @@ describe('UnregisterCommand', () => {
     });
 
     it('should return error if guild does not track player', async () => {
-        const interaction = createMockInteraction();
-        const player: Partial<Player> = { puuid: 'puuid123', gameName: 'sALU LER GA SAVA', tagLine: 'EUW' };
-        const guild: Partial<Guild> = { guildId: 'guild123', puuids: [] };
+        const interaction = InteractionFactory.builder()
+            .withArgs({
+                gameName: 'Faker',
+                tagLine: 'EUW',
+                region: 'euw1',
+            })
+            .inGuild('123')
+            .build();
+        const guild: Guild = { guildId: '123', puuids: ['456'] };
+        const player = Player.fromDto(
+            ProfileFactory.createPlayerProfileDTO({
+                account: ProfileFactory.createAccountDTO({ puuid: 'not456' }),
+            }),
+            'euw1',
+        );
 
-        jest.spyOn(playerRepo, 'findOneByGameName').mockResolvedValue(player as Player);
-        jest.spyOn(guildRepo, 'findOne').mockResolvedValue(guild as Guild);
+        jest.spyOn(playerRepo, 'findOneByGameName').mockResolvedValue(player);
+        jest.spyOn(guildRepo, 'findOne').mockResolvedValue(guild);
 
         await command.execute(interaction);
 
@@ -77,19 +93,45 @@ describe('UnregisterCommand', () => {
     });
 
     it('should unregister player from guild and confirm', async () => {
-        const interaction = createMockInteraction();
-        const player: Partial<Player> = { puuid: 'puuid123', gameName: 'Faker', tagLine: 'EUW' };
-        const guild: Partial<Guild> = { guildId: 'guild123', puuids: ['puuid123'] };
-
-        jest.spyOn(playerRepo, 'findOneByGameName').mockResolvedValue(player as Player);
-        jest.spyOn(guildRepo, 'findOne').mockResolvedValue(guild as Guild);
-        jest.spyOn(guildRepo, 'removePlayerFromGuild').mockResolvedValue(null);
+        const interaction = InteractionFactory.builder()
+            .withArgs({
+                gameName: 'whizizi',
+                tagLine: 'euw',
+                region: 'euw1',
+            })
+            .inGuild('123')
+            .build();
+        const player = Player.fromDto(
+            ProfileFactory.createPlayerProfileDTO({
+                account: ProfileFactory.createAccountDTO({ puuid: '456' }),
+            }),
+            'euw1',
+        );
+        const guild: Guild = { guildId: '123', puuids: ['456'] };
+        jest.spyOn(playerRepo, 'findOneByGameName').mockResolvedValue(player);
+        jest.spyOn(guildRepo, 'findOne').mockResolvedValue(guild);
 
         await command.execute(interaction);
+
+        expect(jest.spyOn(guildRepo, 'removePlayerFromGuild')).toHaveBeenCalledWith('123', '456');
 
         expect(interaction.reply).toHaveBeenCalledWith({
             content: expect.stringContaining('Removed from tracking'),
             flags: undefined,
         });
+    });
+
+    it('should return an error if user is not admin', async () => {
+        const interaction = InteractionFactory.builder()
+            .withArgs({
+                gameName: 'whizizi',
+                tagLine: 'euw',
+                region: 'euw1',
+            })
+            .inGuild('123')
+            .nonAdmin()
+            .build();
+
+        await expect(command.execute(interaction)).rejects.toThrow('Not an admin');
     });
 });

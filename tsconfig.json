@@ -15,6 +15,7 @@
       "@features/*": ["src/features/*"],
       "@constants/*": ["src/common/constants.ts"],
       "@persistence/*": ["src/persistence/*"],
+      "@test-utils/*": ["src/test-utils/*"],
       "@config/*": ["src/config/*"],
       "@logger/*": ["src/logger/*"],
       "src/*": ["src/*"]

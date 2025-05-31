@@ -111,7 +111,7 @@ export namespace MatchV5 {
         gameMode: string; // Refer to the Game Constants documentation.
         gameName: string;
         gameStartTimestamp: number; // Unix timestamp for when match starts on the game server.
-        gameType: string;
+        gameType: string; // matchmaking logic ("MATCHED_GAME", "CUSTOM_GAME" ...)
         gameVersion: string; // The first two parts can be used to determine the patch a game was played on.
         mapId: number; // Refer to the Game Constants documentation.
         participants: ParticipantDTO[];

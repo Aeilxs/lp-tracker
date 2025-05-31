@@ -36,9 +36,9 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
         );
 
         const { gameName, tagLine, region } = this.getOptions(interaction);
-        const profile = await this.riotService.fetchFullPlayerProfile(gameName, tagLine, region);
+        const profileDTO = await this.riotService.fetchFullPlayerProfile(gameName, tagLine, region);
 
-        if (!profile) {
+        if (!profileDTO) {
             return this.reply(
                 interaction,
                 `Player \`${gameName}#${tagLine}\` not found on region **${region}**.`,
@@ -46,18 +46,18 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
             );
         }
 
-        const existing = await this.playerRepo.findOne(profile.account.puuid);
+        const existing = await this.playerRepo.findOne(profileDTO.account.puuid);
 
         if (interaction.guildId) {
-            await this.guildRepo.addPlayerToGuild(interaction.guildId, profile.account.puuid);
+            await this.guildRepo.addPlayerToGuild(interaction.guildId, profileDTO.account.puuid);
         }
 
         if (existing) {
             this.loggerService.verbose(`Player ${gameName}#${tagLine} already registered in DB.`);
-            return this.reply(interaction, this.formatResponse(existing, true));
+            return this.reply(interaction, this.formatResponse(existing));
         }
 
-        const player = await this.playerRepo.save(Player.fromDto(profile, region));
+        const player = await this.playerRepo.save(Player.fromDto(profileDTO, region));
         if (!player) {
             this.loggerService.error(`Failed to register player ${gameName}#${tagLine} in region ${region}.`);
             return this.reply(
@@ -78,7 +78,7 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
         };
     }
 
-    private formatResponse(p: Player, existing = false): string {
+    private formatResponse(p: Player): string {
         const wr = (w: number, l: number): string => {
             const total = w + l;
             return total === 0 ? 'N/A' : `${((w / total) * 100).toFixed(2)}%`;
@@ -89,7 +89,7 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
 
         return (
             '```ascii\n' +
-            `- ${existing ? 'Already registered' : 'Tracked player'} ${p.gameName}#${p.tagLine}\n` +
+            `- Tracked player ${p.gameName}#${p.tagLine}\n` +
             `- SoloQ: ${solo?.tier ?? 'Unranked'} ${solo?.rank ?? ''} ${solo?.leaguePoints ?? ''} LP ` +
             `(wins: ${solo?.wins ?? 0} losses: ${solo?.losses ?? 0} | wr: ${wr(solo?.wins ?? 0, solo?.losses ?? 0)})\n` +
             `- FlexQ: ${flex?.tier ?? 'Unranked'} ${flex?.rank ?? ''} ${flex?.leaguePoints ?? ''} LP ` +

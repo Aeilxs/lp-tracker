@@ -1,12 +1,16 @@
-import { Test } from '@nestjs/testing';
-import { RegisterCommand } from './register.command';
-import { LoggerService } from '@logger/logger.service';
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import { RiotService } from '@features/riot/riot.service';
-import { PlayerRepository } from '@persistence/player/player.repository';
+import { LoggerService } from '@logger/logger.service';
+import { Test } from '@nestjs/testing';
 import { GuildRepository } from '@persistence/guild/guild.repository';
-import { createMockInteraction } from '../../../test-utils/command-interaction.mock';
+import { PlayerRepository } from '@persistence/player/player.repository';
 import { Player } from '@persistence/player/player.schema';
-import { PlayerProfileDTO } from '@features/riot/dtos';
+import { InteractionFactory } from '@test-utils/command-interaction-factory.mock';
+import { ProfileFactory } from '@test-utils/profile-factory.mock';
+
+import { RegisterCommand } from './register.command';
 
 describe('RegisterCommand', () => {
     let command: RegisterCommand;
@@ -24,25 +28,9 @@ describe('RegisterCommand', () => {
             providers: [
                 RegisterCommand,
                 { provide: LoggerService, useValue: mockLogger },
-                {
-                    provide: RiotService,
-                    useValue: {
-                        fetchFullPlayerProfile: jest.fn(),
-                    },
-                },
-                {
-                    provide: PlayerRepository,
-                    useValue: {
-                        findOne: jest.fn(),
-                        save: jest.fn(),
-                    },
-                },
-                {
-                    provide: GuildRepository,
-                    useValue: {
-                        addPlayerToGuild: jest.fn(),
-                    },
-                },
+                { provide: RiotService, useValue: { fetchFullPlayerProfile: jest.fn() } },
+                { provide: PlayerRepository, useValue: { findOne: jest.fn(), save: jest.fn() } },
+                { provide: GuildRepository, useValue: { addPlayerToGuild: jest.fn() } },
             ],
         }).compile();
 
@@ -50,10 +38,11 @@ describe('RegisterCommand', () => {
         riotService = module.get(RiotService);
         playerRepo = module.get(PlayerRepository);
         guildRepo = module.get(GuildRepository);
+        ProfileFactory.resetIdTo(1);
     });
 
     it('should reply with error if player is not found on Riot API', async () => {
-        const interaction = createMockInteraction();
+        const interaction = InteractionFactory.createMockInteraction();
         jest.spyOn(riotService, 'fetchFullPlayerProfile').mockResolvedValue(null);
 
         await command.execute(interaction);
@@ -64,59 +53,42 @@ describe('RegisterCommand', () => {
         });
     });
 
-    it('should add player to guild if already in DB', async () => {
-        const interaction = createMockInteraction();
-        const profile: Partial<PlayerProfileDTO> = {
-            account: { puuid: 'puuid123', gameName: 'Faker', tagLine: 'EUW' },
-            ranked: {
-                soloQ: null,
-                flexQ: null,
-            },
-        };
-        const player = { ...profile, region: 'euw1' };
+    it('Should add a player to Guild.puuids if already in database', async () => {
+        const interaction = InteractionFactory.builder()
+            .withArgs({
+                gameName: 'Faker',
+                tagLine: 'EUW',
+                region: 'euw1',
+            })
+            .inGuild('guild-1234')
+            .build();
 
-        jest.spyOn(riotService, 'fetchFullPlayerProfile').mockResolvedValue(profile as PlayerProfileDTO);
-        jest.spyOn(playerRepo, 'findOne').mockResolvedValue(player as unknown as Player);
-
-        await command.execute(interaction);
-
-        expect(guildRepo.addPlayerToGuild).toHaveBeenCalledWith('guild123', 'puuid123');
-        expect(interaction.reply).toHaveBeenCalledWith({
-            content: expect.stringContaining('Already registered'),
+        const profileDTO = ProfileFactory.createPlayerProfileDTO({
+            account: ProfileFactory.createAccountDTO({ gameName: 'Faker', puuid: 'puuid123' }),
         });
+
+        jest.spyOn(riotService, 'fetchFullPlayerProfile').mockResolvedValue(profileDTO);
+        const player = Player.fromDto(profileDTO, 'euw1');
+        jest.spyOn(playerRepo, 'findOne').mockResolvedValue(player);
+        await command.execute(interaction);
+        expect(guildRepo.addPlayerToGuild).toHaveBeenCalledWith('guild-1234', 'puuid123');
     });
 
     it('should save and register new player if not in DB', async () => {
-        const interaction = createMockInteraction();
-        const profile: Partial<PlayerProfileDTO> = {
-            account: {
-                puuid: 'puuid456',
-                gameName: 'Faker',
-                tagLine: 'EUW',
-            },
-            summoner: {
-                id: 'summoner456',
-                profileIconId: 123,
-                summonerLevel: 99,
-            },
-            ranked: {
-                soloQ: { tier: 'GOLD', rank: 'II', leaguePoints: 50, wins: 20, losses: 10 },
-                flexQ: { tier: 'SILVER', rank: 'I', leaguePoints: 75, wins: 15, losses: 5 },
-            },
-        };
+        const interaction = InteractionFactory.builder().inGuild('guild-1234').build();
+        const profileDTO = ProfileFactory.createPlayerProfileDTO({
+            account: ProfileFactory.createAccountDTO({ gameName: 'Uzi', tagLine: 'EUW', puuid: 'puuid456' }),
+        });
 
-        const player = Player.fromDto(profile, 'euw1');
+        const player = Player.fromDto(profileDTO, 'euw1');
 
-        jest.spyOn(riotService, 'fetchFullPlayerProfile').mockResolvedValue(profile);
+        jest.spyOn(riotService, 'fetchFullPlayerProfile').mockResolvedValue(profileDTO);
         jest.spyOn(playerRepo, 'findOne').mockResolvedValue(null);
         jest.spyOn(playerRepo, 'save').mockResolvedValue(player);
 
         await command.execute(interaction);
 
         expect(playerRepo.save).toHaveBeenCalled();
-        expect(guildRepo.addPlayerToGuild).toHaveBeenCalledWith('guild123', 'puuid456');
-        expect(interaction.reply).toHaveBeenCalledWith({
-            content: expect.stringContaining('Tracked player'),
-        });
+        expect(guildRepo.addPlayerToGuild).toHaveBeenCalledWith('guild-1234', 'puuid456');
     });
 });

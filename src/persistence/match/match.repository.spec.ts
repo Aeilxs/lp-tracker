@@ -1,6 +1,7 @@
 import { ConfigService } from '@config/config.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
+import { MatchFactory } from '@test-utils/match-factory.mock';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
@@ -12,10 +13,9 @@ describe('MatchRepository', () => {
     let repo: MatchRepository;
     let mongod: MongoMemoryServer;
 
-    const mockData = {
-        info: { gameId: 12345, participants: [] },
-        metadata: { matchId: 'EUW1_123456789', participants: ['puuid1'] },
-    };
+    const mockData = MatchFactory.createMatchDTO({
+        metadata: MatchFactory.createMetadataDTO({ dataVersion: '3' }),
+    });
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
@@ -50,11 +50,12 @@ describe('MatchRepository', () => {
     });
 
     it('should save and retrieve a raw match', async () => {
-        const matchId = 'EUW1_123456789';
+        const matchId = mockData.metadata.matchId;
         await repo.save(matchId, mockData);
         const found = await repo.findOne(matchId);
 
         expect(found?.data.metadata.matchId).toBe(matchId);
+        expect(found?.data.metadata.dataVersion).toBe('3');
         expect(found?.seasonInfo.preseason).toBe(false);
         expect(found?.seasonInfo.season).toBe(1);
         expect(found?.seasonInfo.split).toBe(2);
