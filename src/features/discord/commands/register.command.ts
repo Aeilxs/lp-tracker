@@ -2,7 +2,6 @@ import { RiotService } from '@features/riot/riot.service';
 import { LoggerService } from '@logger/logger.service';
 import { Injectable } from '@nestjs/common';
 import { GuildRepository } from '@persistence/guild/guild.repository';
-import { Guild } from '@persistence/guild/guild.schema';
 import { PlayerRepository } from '@persistence/player/player.repository';
 import { Player } from '@persistence/player/player.schema';
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
@@ -31,25 +30,14 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
         ) as SlashCommandBuilder;
 
     async execute(interaction: ChatInputCommandInteraction) {
+        await this.assertInGuild(interaction);
         this.loggerService.verbose(
             `RegisterCommand run by ${interaction.user.username} in guild ${interaction.guildId}`,
         );
-        const guildId = interaction.guildId;
 
-        if (!guildId) {
-            return this.reply(interaction, 'This command can only be used in a server.', true);
-        }
-
-        const guild = await this.ensureGuild(guildId, interaction);
-        if (!guild) return;
-
-        const [gameName, tagLine, region] = [
-            interaction.options.getString('game_name', true),
-            interaction.options.getString('tag_line', true),
-            interaction.options.getString('region', true),
-        ];
-
+        const { gameName, tagLine, region } = this.getOptions(interaction);
         const profile = await this.riotService.fetchFullPlayerProfile(gameName, tagLine, region);
+
         if (!profile) {
             return this.reply(
                 interaction,
@@ -59,9 +47,14 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
         }
 
         const existing = await this.playerRepo.findOne(profile.account.puuid);
+
+        if (interaction.guildId) {
+            await this.guildRepo.addPlayerToGuild(interaction.guildId, profile.account.puuid);
+        }
+
         if (existing) {
-            this.loggerService.verbose(`Player ${gameName}#${tagLine} already registered in db.`);
-            return this.reply(interaction, this.formatResponse(existing, true), true);
+            this.loggerService.verbose(`Player ${gameName}#${tagLine} already registered in DB.`);
+            return this.reply(interaction, this.formatResponse(existing, true));
         }
 
         const player = await this.playerRepo.save(Player.fromDto(profile, region));
@@ -74,24 +67,15 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
             );
         }
 
-        if (!guild.puuids.includes(player.puuid)) {
-            await this.guildRepo.addPlayerToGuild(guildId, player.puuid);
-        }
-
-        await this.reply(interaction, this.formatResponse(player));
+        return this.reply(interaction, this.formatResponse(player));
     }
 
-    private async ensureGuild(guildId: string, interaction: ChatInputCommandInteraction): Promise<Guild | null> {
-        let guild = await this.guildRepo.findOne(guildId);
-        if (!guild) {
-            guild = await this.guildRepo.save(Guild.fromGuildId(guildId));
-            if (!guild) {
-                this.loggerService.error(`Failed to create guild entry for ${guildId}.`);
-                await this.reply(interaction, 'Failed to register your guild. Please try again later.', true);
-                return null;
-            }
-        }
-        return guild;
+    private getOptions(interaction: ChatInputCommandInteraction) {
+        return {
+            gameName: interaction.options.getString('game_name', true),
+            tagLine: interaction.options.getString('tag_line', true),
+            region: interaction.options.getString('region', true),
+        };
     }
 
     private formatResponse(p: Player, existing = false): string {

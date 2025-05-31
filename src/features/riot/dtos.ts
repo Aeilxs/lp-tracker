@@ -10,22 +10,22 @@ import { QUEUE_TYPE } from './constants';
 //                                              //
 //////////////////////////////////////////////////
 
-export interface PlayerProfileDto {
-    account: AccountDto;
-    summoner: SummonerDto;
+export interface PlayerProfileDTO {
+    account: AccountDTO;
+    summoner: SummonerDTO;
     ranked: {
-        soloQ: RankedInfoDto | null;
-        flexQ: RankedInfoDto | null;
+        soloQ: RankedInfoDTO | null;
+        flexQ: RankedInfoDTO | null;
     };
 }
 
-export interface AccountDto {
+export interface AccountDTO {
     puuid: string;
     gameName: string;
     tagLine: string;
 }
 
-export interface SummonerDto {
+export interface SummonerDTO {
     id: string;
     accountId: string;
     puuid: string;
@@ -34,7 +34,7 @@ export interface SummonerDto {
     summonerLevel: number;
 }
 
-export interface RankedInfoDto {
+export interface RankedInfoDTO {
     leagueId: string;
     queueType: QUEUE_TYPE.RANKED_SOLO_5x5 | QUEUE_TYPE.RANKED_FLEX_SR;
     tier: string;
@@ -56,13 +56,13 @@ export interface RankedInfoDto {
 //                                              //
 //////////////////////////////////////////////////
 
-export interface ActiveGameDto {
+export interface ActiveGameDTO {
     gameId: number;
     mapId: number;
     gameMode: string;
     gameType: string;
     gameQueueConfigId: number;
-    participants: ActiveGameParticipantDto[];
+    participants: ActiveGameParticipantDTO[];
     observers: { encryptionKey: string };
     platformId: string;
     bannedChampions: { championId: number; teamId: number; pickTurn: number }[];
@@ -70,7 +70,7 @@ export interface ActiveGameDto {
     gameLength: number;
 }
 
-export interface ActiveGameParticipantDto {
+export interface ActiveGameParticipantDTO {
     puuid: string;
     teamId: number;
     spell1Id: number;
@@ -88,143 +88,203 @@ export interface ActiveGameParticipantDto {
     };
 }
 
-export interface MatchDto {
-    metadata: {
-        dataVersion: string;
-        matchId: string;
-        participants: string[]; // list of PUUIDs
-    };
+export namespace MatchV5 {
+    /** Match Data Transfer Object from the MATCH-V5 Riot API */
+    export interface MatchDTO {
+        metadata: MetadataDTO; // Match metadata.
+        info: InfoDTO; // Match info.
+    }
 
-    info: {
-        gameCreation: number;
-        gameDuration: number;
-        gameEndTimestamp: number;
+    /** Metadata Data Transfer Object from the MATCH-V5 Riot API */
+    export interface MetadataDTO {
+        dataVersion: string; // Match data version.
+        matchId: string; // Match id.
+        participants: string[]; // A list of participant PUUIDs.
+    }
+
+    /** Info Data Transfer Object from the MATCH-V5 Riot API */
+    export interface InfoDTO {
+        gameCreation: number; // Unix timestamp for when the game is created on the game server (i.e., the loading screen).
+        gameDuration: number; // Prior to patch 11.20, this field returns the game length in milliseconds calculated from gameEndTimestamp - gameStartTimestamp. Post patch 11.20, this field returns the max timePlayed of any participant in the game in seconds, which makes the behavior of this field consistent with that of match-v4. The best way to handling the change in this field is to treat the value as milliseconds if the gameEndTimestamp field isn't in the response and to treat the value as seconds if gameEndTimestamp is in the response.
+        gameEndTimestamp: number; // Unix timestamp for when match ends on the game server. This timestamp can occasionally be significantly longer than when the match "ends". The most reliable way of determining the timestamp for the end of the match would be to add the max time played of any participant to the gameStartTimestamp. This field was added to match-v5 in patch 11.20 on Oct 5th, 2021.
         gameId: number;
-        gameMode: string;
+        gameMode: string; // Refer to the Game Constants documentation.
         gameName: string;
-        gameStartTimestamp: number;
+        gameStartTimestamp: number; // Unix timestamp for when match starts on the game server.
         gameType: string;
-        gameVersion: string;
-        mapId: number;
-        platformId: string;
-        queueId: number;
-        tournamentCode: string;
-        endOfGameResult: string;
+        gameVersion: string; // The first two parts can be used to determine the patch a game was played on.
+        mapId: number; // Refer to the Game Constants documentation.
+        participants: ParticipantDTO[];
+        platformId: string; // Platform where the match was played.
+        queueId: number; // Refer to the Game Constants documentation.
+        teams: TeamDTO[];
+        tournamentCode: string; // Tournament code used to generate the match. This field was added to match-v5 in patch 11.13 on June 23rd, 2021.
+    }
 
-        participants: MatchParticipantDto[];
+    /** Participant Data Transfer Object from the MATCH-V5 Riot API */
+    export interface ParticipantDTO {
+        assists: number;
+        baronKills: number;
+        bountyLevel: number;
+        champExperience: number;
+        champLevel: number;
+        championId: number; // Prior to patch 11.4, on Feb 18th, 2021, this field returned invalid championIds. We recommend determining the champion based on the championName field for matches played prior to patch 11.4.
+        championName: string;
+        championTransform: number; // This field is currently only utilized for Kayn's transformations. (Legal values: 0 - None, 1 - Slayer, 2 - Assassin)
+        consumablesPurchased: number;
+        damageDealtToBuildings: number;
+        damageDealtToObjectives: number;
+        damageDealtToTurrets: number;
+        damageSelfMitigated: number;
+        deaths: number;
+        detectorWardsPlaced: number;
+        doubleKills: number;
+        dragonKills: number;
+        firstBloodAssist: boolean;
+        firstBloodKill: boolean;
+        firstTowerAssist: boolean;
+        firstTowerKill: boolean;
+        gameEndedInEarlySurrender: boolean;
+        gameEndedInSurrender: boolean;
+        goldEarned: number;
+        goldSpent: number;
+        individualPosition: string; // Both individualPosition and teamPosition are computed by the game server and are different versions of the most likely position played by a player. The individualPosition is the best guess for which position the player actually played in isolation of anything else. The teamPosition is the best guess for which position the player actually played if we add the constraint that each team must have one top player, one jungle, one middle, etc. Generally the recommendation is to use the teamPosition field over the individualPosition field.
+        inhibitorKills: number;
+        inhibitorTakedowns: number;
+        inhibitorsLost: number;
+        item0: number;
+        item1: number;
+        item2: number;
+        item3: number;
+        item4: number;
+        item5: number;
+        item6: number;
+        itemsPurchased: number;
+        killingSprees: number;
+        kills: number;
+        lane: string;
+        largestCriticalStrike: number;
+        largestKillingSpree: number;
+        largestMultiKill: number;
+        longestTimeSpentLiving: number;
+        magicDamageDealt: number;
+        magicDamageDealtToChampions: number;
+        magicDamageTaken: number;
+        neutralMinionsKilled: number;
+        nexusKills: number;
+        nexusTakedowns: number;
+        nexusLost: number;
+        objectivesStolen: number;
+        objectivesStolenAssists: number;
+        participantId: number;
+        pentaKills: number;
+        perks: PerksDTO;
+        physicalDamageDealt: number;
+        physicalDamageDealtToChampions: number;
+        physicalDamageTaken: number;
+        profileIcon: number;
+        puuid: string;
+        quadraKills: number;
+        riotIdName: string;
+        riotIdTagline: string;
+        role: string;
+        sightWardsBoughtInGame: number;
+        spell1Casts: number;
+        spell2Casts: number;
+        spell3Casts: number;
+        spell4Casts: number;
+        summoner1Casts: number;
+        summoner1Id: number;
+        summoner2Casts: number;
+        summoner2Id: number;
+        summonerId: string;
+        summonerLevel: number;
+        summonerName: string;
+        teamEarlySurrendered: boolean;
+        teamId: number;
+        teamPosition: string; // Both individualPosition and teamPosition are computed by the game server and are different versions of the most likely position played by a player. The individualPosition is the best guess for which position the player actually played in isolation of anything else. The teamPosition is the best guess for which position the player actually played if we add the constraint that each team must have one top player, one jungle, one middle, etc. Generally the recommendation is to use the teamPosition field over the individualPosition field.
+        timeCCingOthers: number;
+        timePlayed: number;
+        totalDamageDealt: number;
+        totalDamageDealtToChampions: number;
+        totalDamageShieldedOnTeammates: number;
+        totalDamageTaken: number;
+        totalHeal: number;
+        totalHealsOnTeammates: number;
+        totalMinionsKilled: number;
+        totalTimeCCDealt: number;
+        totalTimeSpentDead: number;
+        totalUnitsHealed: number;
+        tripleKills: number;
+        trueDamageDealt: number;
+        trueDamageDealtToChampions: number;
+        trueDamageTaken: number;
+        turretKills: number;
+        turretTakedowns: number;
+        turretsLost: number;
+        unrealKills: number;
+        visionScore: number;
+        visionWardsBoughtInGame: number;
+        wardsKilled: number;
+        wardsPlaced: number;
+        win: boolean;
+    }
 
-        teams: {
-            teamId: number;
-            win: boolean;
-            bans?: {
-                championId: number;
-                pickTurn: number;
-            }[];
-            objectives?: {
-                baron: { first: boolean; kills: number };
-                champion: { first: boolean; kills: number };
-                dragon: { first: boolean; kills: number };
-                inhibitor: { first: boolean; kills: number };
-                riftHerald: { first: boolean; kills: number };
-                tower: { first: boolean; kills: number };
-            };
-        }[];
-    };
-}
+    /** Perks Data Transfer Object from the MATCH-V5 Riot API */
+    export interface PerksDTO {
+        statPerks: PerkStatsDTO;
+        styles: PerkStyleDTO[];
+    }
 
-export interface MatchParticipantDto {
-    puuid: string;
-    summonerId: string;
-    summonerName: string;
-    riotIdGameName: string;
-    riotIdTagline: string;
+    /** Perk Stats Data Transfer Object from the MATCH-V5 Riot API */
+    export interface PerkStatsDTO {
+        defense: number;
+        flex: number;
+        offense: number;
+    }
 
-    championId: number;
-    championName: string;
-    champLevel: number;
-    championTransform: number;
+    /** Perk Style Data Transfer Object from the MATCH-V5 Riot API */
+    export interface PerkStyleDTO {
+        description: string;
+        selections: PerkStyleSelectionDTO[];
+        style: number;
+    }
 
-    kills: number;
-    deaths: number;
-    assists: number;
-    win: boolean;
-    teamId: number;
-    teamPosition: string;
-    individualPosition: string;
-    role: string;
-    placement: number;
-    subteamPlacement: number;
-    teamEarlySurrendered: boolean;
+    /** Perk Style Selection Data Transfer Object from the MATCH-V5 Riot API */
+    export interface PerkStyleSelectionDTO {
+        perk: number;
+        var1: number;
+        var2: number;
+        var3: number;
+    }
 
-    goldEarned: number;
-    goldSpent: number;
-    totalMinionsKilled: number;
-    neutralMinionsKilled: number;
-    totalDamageDealt: number;
-    totalDamageDealtToChampions: number;
-    totalDamageTaken: number;
-    physicalDamageDealt: number;
-    magicDamageDealt: number;
-    trueDamageDealt: number;
-    physicalDamageDealtToChampions: number;
-    magicDamageDealtToChampions: number;
-    trueDamageDealtToChampions: number;
-    damageSelfMitigated: number;
-    totalHeal: number;
-    totalHealsOnTeammates: number;
-    totalUnitsHealed: number;
-    totalDamageShieldedOnTeammates: number;
-    damageDealtToObjectives: number;
-    damageDealtToBuildings: number;
-    damageDealtToTurrets: number;
-    largestCriticalStrike: number;
+    /** Team Data Transfer Object from the MATCH-V5 Riot API */
+    export interface TeamDTO {
+        bans: BanDTO[];
+        objectives: ObjectivesDTO;
+        teamId: number;
+        win: boolean;
+    }
 
-    visionScore: number;
-    visionWardsBoughtInGame: number;
-    wardsPlaced: number;
-    wardsKilled: number;
-    detectorWardsPlaced: number;
-    sightWardsBoughtInGame: number;
+    /** Ban Data Transfer Object from the MATCH-V5 Riot API */
+    export interface BanDTO {
+        championId: number;
+        pickTurn: number;
+    }
 
-    summoner1Id: number;
-    summoner2Id: number;
-    summoner1Casts: number;
-    summoner2Casts: number;
+    /** Objectives Data Transfer Object from the MATCH-V5 Riot API */
+    export interface ObjectivesDTO {
+        baron: ObjectiveDTO;
+        champion: ObjectiveDTO;
+        dragon: ObjectiveDTO;
+        inhibitor: ObjectiveDTO;
+        riftHerald: ObjectiveDTO;
+        tower: ObjectiveDTO;
+    }
 
-    spell1Casts: number;
-    spell2Casts: number;
-    spell3Casts: number;
-    spell4Casts: number;
-
-    item0: number;
-    item1: number;
-    item2: number;
-    item3: number;
-    item4: number;
-    item5: number;
-    item6: number;
-    itemsPurchased: number;
-
-    timePlayed: number;
-    totalTimeSpentDead: number;
-    longestTimeSpentLiving: number;
-    champExperience: number;
-
-    perks: {
-        statPerks: {
-            defense: number;
-            flex: number;
-            offense: number;
-        };
-        styles: {
-            description: string;
-            style: number;
-            selections: {
-                perk: number;
-                var1: number;
-                var2: number;
-                var3: number;
-            }[];
-        }[];
-    };
+    /** Objective Data Transfer Object from the MATCH-V5 Riot API */
+    export interface ObjectiveDTO {
+        first: boolean;
+        kills: number;
+    }
 }

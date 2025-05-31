@@ -9,7 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { LoggerService } from 'src/logger/logger.service';
 
 import { QUEUE_ID, QUEUE_TYPE } from './constants';
-import { AccountDto, ActiveGameDto, MatchDto, PlayerProfileDto, RankedInfoDto, SummonerDto } from './dtos';
+import { AccountDTO, ActiveGameDTO, MatchV5, PlayerProfileDTO, RankedInfoDTO, SummonerDTO } from './dtos';
 
 @Injectable()
 export class RiotService {
@@ -18,7 +18,7 @@ export class RiotService {
         private readonly loggerService: LoggerService,
     ) {}
 
-    async fetchFullPlayerProfile(gameName: string, tagLine: string, region: string): Promise<PlayerProfileDto | null> {
+    async fetchFullPlayerProfile(gameName: string, tagLine: string, region: string): Promise<PlayerProfileDTO | null> {
         this.loggerService.verbose(`Fetching Riot data for ${gameName}#${tagLine} (${region.toUpperCase()})`);
         try {
             const normalizedRegion = region.toLowerCase();
@@ -63,10 +63,10 @@ export class RiotService {
      * @param host - The regional API host (e.g. 'americas.api.riotgames.com')
      * @returns The Riot account information or null if the request fails
      */
-    async fetchRiotAccount(gameName: string, tagLine: string, host: string): Promise<AccountDto | null> {
+    async fetchRiotAccount(gameName: string, tagLine: string, host: string): Promise<AccountDTO | null> {
         try {
             const url = `https://${host}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
-            const res = await firstValueFrom(this.http.get<AccountDto>(url));
+            const res = await firstValueFrom(this.http.get<AccountDTO>(url));
             return res.data;
         } catch (err) {
             this.handleRiotApiError(err, `Failed to fetch Riot account for ${gameName}#${tagLine}`);
@@ -82,10 +82,10 @@ export class RiotService {
      * @param region - Riot platform ID (e.g. 'euw1', 'na1', etc.)
      * @returns The summoner information or null if the request fails
      */
-    async fetchSummonerInfo(puuid: string, region: string): Promise<SummonerDto | null> {
+    async fetchSummonerInfo(puuid: string, region: string): Promise<SummonerDTO | null> {
         try {
             const url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
-            const res = await firstValueFrom(this.http.get<SummonerDto>(url));
+            const res = await firstValueFrom(this.http.get<SummonerDTO>(url));
             return res.data;
         } catch (err) {
             this.handleRiotApiError(err, `Failed to fetch summoner info for PUUID ${puuid} (${region})`);
@@ -101,10 +101,10 @@ export class RiotService {
      * @param region - Riot platform ID (e.g. 'euw1', 'na1', etc.)
      * @returns An array of ranked stats or null if the request fails
      */
-    async fetchRankedStats(summonerId: string, region: string): Promise<RankedInfoDto[] | null> {
+    async fetchRankedStats(summonerId: string, region: string): Promise<RankedInfoDTO[] | null> {
         try {
             const url = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`;
-            const res = await firstValueFrom(this.http.get<RankedInfoDto[]>(url));
+            const res = await firstValueFrom(this.http.get<RankedInfoDTO[]>(url));
             return res.data;
         } catch (err) {
             this.handleRiotApiError(err, `Failed to fetch ranked stats for summoner ID ${summonerId} (${region})`);
@@ -119,12 +119,12 @@ export class RiotService {
      * @param region - Riot platform ID (e.g. 'euw1', 'na1', etc.)
      * @returns The active game data if in game, or null if not
      */
-    async fetchCurrentGame(puuid: string, region: string): Promise<ActiveGameDto | null> {
+    async fetchCurrentGame(puuid: string, region: string): Promise<ActiveGameDTO | null> {
         this.loggerService.verbose(`Checking current game for puuid: ${puuid} (${region.toUpperCase()})`);
         try {
             const normalizedRegion = region.toLowerCase();
             const url = `https://${normalizedRegion}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/${puuid}`;
-            const res = await firstValueFrom(this.http.get<ActiveGameDto>(url));
+            const res = await firstValueFrom(this.http.get<ActiveGameDTO>(url));
             return res.data;
         } catch (err) {
             const axiosErr = err as AxiosError;
@@ -178,7 +178,7 @@ export class RiotService {
      * @param region - Platform (e.g. "euw1", "na1", etc.)
      * @returns MatchDto or null if the request fails
      */
-    async fetchMatchById(matchId: string, region: string): Promise<MatchDto | null> {
+    async fetchMatchById(matchId: string, region: string): Promise<MatchV5.MatchDTO | null> {
         const host = this.getRegionalHost(region);
         if (!host) {
             this.loggerService.warn(`Unknown host for region: ${region}`);
@@ -188,7 +188,7 @@ export class RiotService {
         const url = `https://${host}/lol/match/v5/matches/${matchId}`;
 
         try {
-            const res = await firstValueFrom(this.http.get<MatchDto>(url));
+            const res = await firstValueFrom(this.http.get<MatchV5.MatchDTO>(url));
             return res.data;
         } catch (err) {
             this.handleRiotApiError(err, `Failed to fetch match by ID: ${matchId}`);

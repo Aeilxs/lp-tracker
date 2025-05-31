@@ -1,5 +1,5 @@
 import { QUEUE_TYPE } from '@features/riot/constants';
-import { PlayerProfileDto } from '@features/riot/dtos';
+import { PlayerProfileDTO } from '@features/riot/dtos';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
@@ -44,7 +44,7 @@ export class Player {
     readonly createdAt: Date;
     readonly updatedAt: Date;
 
-    static fromDto(dto: PlayerProfileDto, region: string): Player {
+    static fromDto(dto: PlayerProfileDTO, region: string): Player {
         const player = new this();
         player.puuid = dto.account.puuid;
         player.summonerId = dto.summoner.id;

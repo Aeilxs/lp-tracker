@@ -32,22 +32,18 @@ export class UnregisterCommand extends BaseSlashCommand implements SlashCommand 
         await this.assertInGuild(interaction);
         await this.assertIsAdmin(interaction);
 
-        const gameName = interaction.options.getString('game_name', true);
-        const tagLine = interaction.options.getString('tag_line', true);
-        const region = interaction.options.getString('region', true);
-        const playerToRemove = await this.playerRepo.findOneByGameName(gameName, tagLine, region);
-
-        if (!playerToRemove) {
-            return this.reply(
-                interaction,
-                `Player ${gameName}#${tagLine} (${region}) doesn't exist in our database.`,
-                true,
-            );
-        }
+        const { gameName, tagLine, region } = this.getOptions(interaction);
+        const playerToRemove = await this.getPlayerOrReply(interaction, gameName, tagLine, region);
+        if (!playerToRemove) return;
 
         const guildId = interaction.guildId;
         if (!guildId) {
             return this.reply(interaction, `Error guildId is falsy`);
+        }
+
+        const isTracked = await this.isPlayerTracked(guildId, playerToRemove.puuid);
+        if (!isTracked) {
+            return this.reply(interaction, `Player ${gameName}#${tagLine} is not tracked by this server.`, true);
         }
 
         await this.guildRepo.removePlayerFromGuild(guildId, playerToRemove.puuid);
@@ -60,5 +56,36 @@ export class UnregisterCommand extends BaseSlashCommand implements SlashCommand 
                 `- PUUID: ${playerToRemove.puuid}\n` +
                 '```',
         );
+    }
+
+    private getOptions(interaction: ChatInputCommandInteraction) {
+        return {
+            gameName: interaction.options.getString('game_name', true),
+            tagLine: interaction.options.getString('tag_line', true),
+            region: interaction.options.getString('region', true),
+        };
+    }
+
+    private async getPlayerOrReply(
+        interaction: ChatInputCommandInteraction,
+        gameName: string,
+        tagLine: string,
+        region: string,
+    ) {
+        const player = await this.playerRepo.findOneByGameName(gameName, tagLine, region);
+        if (!player) {
+            await this.reply(
+                interaction,
+                `Player ${gameName}#${tagLine} (${region}) doesn't exist in our database.`,
+                true,
+            );
+            return null;
+        }
+        return player;
+    }
+
+    private async isPlayerTracked(guildId: string, puuid: string): Promise<boolean> {
+        const guild = await this.guildRepo.findOne(guildId);
+        return guild?.puuids.includes(puuid) ?? false;
     }
 }

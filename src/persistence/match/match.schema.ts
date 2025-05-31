@@ -1,4 +1,4 @@
-import { MatchDto } from '@features/riot/dtos';
+import { MatchDTO } from '@features/riot/dtos';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
@@ -14,7 +14,7 @@ const SeasonInfoSchema = SchemaFactory.createForClass(SeasonInfo);
 @Schema({ timestamps: true })
 export class Match {
     @Prop({ required: true, unique: true }) matchId: string;
-    @Prop({ required: true, type: Object }) data: MatchDto;
+    @Prop({ required: true, type: Object }) data: MatchDTO;
     @Prop({ required: true, type: SeasonInfoSchema }) seasonInfo: SeasonInfo;
 
     readonly createdAt: Date;
