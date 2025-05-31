@@ -1,4 +1,4 @@
-// profileFactory.ts – helper to generate PlayerProfileDTOs with clean DX.
+// profileFactory.ts - helper to generate PlayerProfileDTOs with clean DX.
 // -----------------------------------------------------------------------------
 // Usage example (Jest):
 // const profile = ProfileFactory.createPlayerProfileDTO({
