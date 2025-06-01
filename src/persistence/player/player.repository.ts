@@ -1,9 +1,8 @@
-import { QUEUE_TYPE } from '@features/riot/constants';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { Player, PlayerDocument, RankedSnapshot } from './player.schema';
+import { Player, PlayerDocument, RankedSnapshot, RankedState } from './player.schema';
 
 @Injectable()
 export class PlayerRepository {
@@ -25,6 +24,10 @@ export class PlayerRepository {
         return this.model.findOne({ puuid }).exec();
     }
 
+    async updateRankedState(puuid: string, ranked: RankedState): Promise<void> {
+        await this.model.updateOne({ puuid }, { $set: { ranked } });
+    }
+
     async findOneByGameName(gameName: string, tagLine: string, region: string): Promise<Player | null> {
         return this.model.findOne({ gameName, tagLine, region });
     }
@@ -39,23 +42,15 @@ export class PlayerRepository {
 
     /**
      * Push a ranked snapshot to a player.
-     * Automatically updates the ranked state as well.
      */
     async addSnapshot(puuid: string, snapshot: RankedSnapshot): Promise<Player | null> {
         const player = await this.model.findOne({ puuid }).exec();
         if (!player) return null;
 
         const alreadyExists = player.snapshots.some((s) => s.matchId === snapshot.matchId);
-        if (alreadyExists) return null; // ou throw si tu veux
+        if (alreadyExists) return null;
 
         player.snapshots.push(snapshot);
-
-        // Update ranked state
-        if (snapshot.queueType === QUEUE_TYPE.RANKED_SOLO_5x5) {
-            player.ranked.soloQ = snapshot.snapshot;
-        } else if (snapshot.queueType === QUEUE_TYPE.RANKED_FLEX_SR) {
-            player.ranked.flexQ = snapshot.snapshot;
-        }
 
         return player.save();
     }

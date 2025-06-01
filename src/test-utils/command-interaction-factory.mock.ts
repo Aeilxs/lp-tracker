@@ -56,7 +56,6 @@ export namespace InteractionFactory {
     ): ChatInputCommandInteraction {
         const { args = {} as A, guildId = 'guild123', isAdmin = true, userName = 'tester' } = opts;
 
-        /*  Helper to generate a typed option getter  */
         const makeGetter = <K extends keyof A>() =>
             jest.fn(<T extends K>(name: T): OptionReturnType<A[T]> => args[name] as OptionReturnType<A[T]>);
 
@@ -65,18 +64,15 @@ export namespace InteractionFactory {
             replied: false,
             deferred: false,
             user: { username: userName },
-            /*  Core reply helpers  */
             reply: jest.fn(),
             deferReply: jest.fn().mockResolvedValue(undefined),
             editReply: jest.fn(),
             followUp: jest.fn(),
-            /*  Options mock  */
             options: {
                 getString: makeGetter(),
                 getInteger: makeGetter(),
                 getBoolean: makeGetter(),
             },
-            /*  Permission handling  */
             member: {
                 permissions: {
                     has: jest.fn().mockReturnValue(isAdmin),

@@ -5,6 +5,7 @@
 import { DiscordModule } from '@features/discord/discord.module';
 import { TrackerModule } from '@features/tracker/tracker.module';
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { GuildPersistenceModule } from '@persistence/guild/guild.module';
 import { MatchPersistenceModule } from '@persistence/match/match.module';
 import { PlayerPersistenceModule } from '@persistence/player/player.module';
@@ -19,6 +20,7 @@ import { LoggerModule } from './logger/logger.module';
         ConfigModule,
         LoggerModule,
         DatabaseModule,
+        ScheduleModule.forRoot(),
 
         // Feature modules
         RiotModule,

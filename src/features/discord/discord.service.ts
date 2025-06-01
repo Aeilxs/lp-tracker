@@ -91,4 +91,26 @@ export class DiscordService implements OnModuleInit {
 
         await this.client.login(this.configService.discordToken);
     }
+
+    async sendToTrackingChannel(guildId: string, content: string): Promise<void> {
+        const guild = this.client.guilds.cache.get(guildId);
+        if (!guild) {
+            this.loggerService.warn(`Cannot find guild ${guildId}`);
+            return;
+        }
+
+        const channel = guild.channels.cache.find((ch) => ch.name === DISCORD_CHANNEL_NAME && ch.isTextBased());
+
+        if (!channel?.isTextBased()) {
+            this.loggerService.warn(`No text channel named "${DISCORD_CHANNEL_NAME}" in guild ${guild.name}`);
+            return;
+        }
+
+        try {
+            await channel.send(content);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            this.loggerService.error(`Failed to send message in guild ${guildId}: ${msg}`);
+        }
+    }
 }
