@@ -85,15 +85,12 @@ export class RegisterCommand extends BaseSlashCommand implements SlashCommand {
         };
 
         const solo = p.ranked.soloQ;
-        const flex = p.ranked.flexQ;
 
         return (
             '```ascii\n' +
             `- Tracked player ${p.gameName}#${p.tagLine}\n` +
             `- SoloQ: ${solo?.tier ?? 'Unranked'} ${solo?.rank ?? ''} ${solo?.leaguePoints ?? ''} LP ` +
             `(wins: ${solo?.wins ?? 0} losses: ${solo?.losses ?? 0} | wr: ${wr(solo?.wins ?? 0, solo?.losses ?? 0)})\n` +
-            `- FlexQ: ${flex?.tier ?? 'Unranked'} ${flex?.rank ?? ''} ${flex?.leaguePoints ?? ''} LP ` +
-            `(wins: ${flex?.wins ?? 0} losses: ${flex?.losses ?? 0} | wr: ${wr(flex?.wins ?? 0, flex?.losses ?? 0)})\n` +
             '```'
         );
     }

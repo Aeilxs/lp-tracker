@@ -7,7 +7,6 @@ import { TrackerModule } from '@features/tracker/tracker.module';
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { GuildPersistenceModule } from '@persistence/guild/guild.module';
-import { MatchPersistenceModule } from '@persistence/match/match.module';
 import { PlayerPersistenceModule } from '@persistence/player/player.module';
 
 import { ConfigModule } from './config/config.module';
@@ -29,7 +28,6 @@ import { LoggerModule } from './logger/logger.module';
 
         // Persistence modules
         PlayerPersistenceModule,
-        MatchPersistenceModule,
         GuildPersistenceModule,
     ],
     controllers: [],

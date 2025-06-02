@@ -145,7 +145,7 @@ export class RiotService {
      *
      * @param puuid - PUUID
      * @param region - Platform (e.g. euw1, na1)
-     * @param count - Number of match IDs to fetch (1-100)
+     * @param count - Number of match IDs to fetch (1-100) (per queue)
      * @returns ["matchId1", "matchId2", ...] or null if the request fails
      */
     async fetchRecentRankedMatchIds(puuid: string, region: string, count: number = 10): Promise<string[] | null> {
@@ -157,16 +157,18 @@ export class RiotService {
 
         try {
             const url = `https://${host}/lol/match/v5/matches/by-puuid/${puuid}/ids`;
-            const [soloQRes, flexQRes] = await Promise.all([
-                firstValueFrom(this.http.get<string[]>(url, { params: { queue: QUEUE_ID.RANKED_SOLO_5x5, count } })),
-                firstValueFrom(this.http.get<string[]>(url, { params: { queue: QUEUE_ID.RANKED_FLEX_SR, count } })),
-            ]);
+            const res = await firstValueFrom(
+                this.http.get<string[]>(url, {
+                    params: {
+                        queue: QUEUE_ID.RANKED_SOLO_5x5,
+                        count,
+                    },
+                }),
+            );
 
-            // Combine results from both queues and remove duplicates even if it's not strictly necessary
-            const combined = Array.from(new Set([...soloQRes.data, ...flexQRes.data]));
-            return combined;
+            return res.data;
         } catch (err) {
-            this.handleRiotApiError(err, `Failed to fetch ranked match IDs for ${puuid}`);
+            this.handleRiotApiError(err, `Failed to fetch soloQ match IDs for ${puuid}`);
             return null;
         }
     }
