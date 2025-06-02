@@ -22,11 +22,12 @@ docker compose up -d     # Start MongoDB container
 docker compose down      # Stop container but keep data
 docker compose down -v   # Stop and delete container + volume
 
-docker exec -it lp_tracker_mongo mongosh #
-use lp_tracker                           #
-show collections                         #
-db.players.find().pretty()               #
-db.matches.find().count()                #
+docker exec -it lp_tracker_mongo mongosh "mongodb://localhost:27017" -u root -p root
+
+use lp_tracker
+show collections
+db.players.find().pretty()
+db.matches.find().count()
 
 ```
 
