@@ -11,10 +11,3 @@ export const DISCORD_TEST_GUILD_ID = 'DISCORD_TEST_GUILD_ID';
 export const MONGO_URI = 'MONGO_URI';
 export const MONGO_DB_NAME = 'MONGO_DB_NAME';
 export const SEASON_INFO = 'SEASON_INFO';
-
-export interface SeasonInfo {
-    year: number;
-    season: number;
-    split: number;
-    preseason: boolean;
-}

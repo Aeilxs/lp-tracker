@@ -16,28 +16,11 @@ import {
     MONGO_DB_NAME,
     DEVELOPMENT,
     PRODUCTION,
-    SEASON_INFO,
-    SeasonInfo,
 } from './constants';
 
 @Injectable()
 export class ConfigService {
-    private readonly _seasonInfo: SeasonInfo;
-
-    constructor(private readonly config: NestConfigService) {
-        const jsonStr = this.config.get<string>(SEASON_INFO);
-        if (!jsonStr) throw new Error('Season info is not set');
-
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(jsonStr);
-        } catch {
-            throw new Error('Season info is not valid JSON');
-        }
-
-        if (!isSeasonInfo(parsed)) throw new Error('Invalid season info format');
-        this._seasonInfo = parsed;
-    }
+    constructor(private readonly config: NestConfigService) {}
 
     get nodeEnv(): string {
         const env = this.config.get<string>(NODE_ENV);
@@ -87,10 +70,6 @@ export class ConfigService {
         return uri;
     }
 
-    get seasonInfo(): SeasonInfo {
-        return this._seasonInfo;
-    }
-
     get isDevelopment(): boolean {
         return this.nodeEnv === DEVELOPMENT;
     }
@@ -113,30 +92,5 @@ export class ConfigService {
         console.log(`\t> DISCORD_TOKEN: ${this.discordToken}`);
         console.log(`\t> MONGO_DB_NAME: ${this.mongoDbName}`);
         console.log(`\t> MONGO_URI: ${this.mongoUri}`);
-        console.log('\t> SEASON_INFO:', this.seasonInfo, '\n');
     }
-}
-
-/**
- * Type guard to validate if an object is a valid ISeasonInfo.
- * Checks for required properties and their types.
- * @param obj - The object to validate
- * @returns True if the object is a valid ISeasonInfo, false otherwise.
- */
-function isSeasonInfo(obj: unknown): obj is SeasonInfo {
-    if (typeof obj !== 'object' || obj === null) return false;
-
-    const o = obj as Record<string, unknown>;
-    const allowedKeys = ['year', 'season', 'split', 'preseason'];
-    const keys = Object.keys(o);
-    if (!keys.every((key) => allowedKeys.includes(key))) return false;
-
-    const { year, season, split, preseason } = o;
-
-    return (
-        typeof year === 'number' &&
-        typeof preseason === 'boolean' &&
-        (typeof season === 'number' || season === null) &&
-        (typeof split === 'number' || split === null)
-    );
 }

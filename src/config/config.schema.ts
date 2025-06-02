@@ -18,6 +18,4 @@ export const configSchema = Joi.object({
 
     MONGO_DB_NAME: Joi.string().required(),
     MONGO_URI: Joi.string().uri().required(),
-
-    SEASON_INFO: Joi.string().required(),
 });
