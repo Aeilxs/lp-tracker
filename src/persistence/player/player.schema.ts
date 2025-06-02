@@ -25,6 +25,7 @@ export const RankedSnapshotSchema = SchemaFactory.createForClass(RankedSnapshot)
 @Schema({ _id: false })
 export class RankedState {
     @Prop({ type: RankedInfoSchema }) soloQ?: RankedInfo;
+    @Prop({ type: RankedInfoSchema }) flexQ?: RankedInfo;
 }
 export const RankedStateSchema = SchemaFactory.createForClass(RankedState);
 
@@ -54,6 +55,7 @@ export class Player {
         player.summonerLevel = dto.summoner.summonerLevel;
         player.ranked = {
             soloQ: dto.ranked.soloQ ?? undefined,
+            flexQ: dto.ranked.flexQ ?? undefined,
         };
         return player;
     }

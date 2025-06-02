@@ -8,6 +8,7 @@ import { LoggerService } from '@logger/logger.service';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module';
+// import { RiotService } from '@features/riot/riot.service';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
@@ -16,6 +17,12 @@ async function bootstrap() {
 
     const config = app.get(ConfigService);
     config.dump();
+
+    // const riot = app.get(RiotService);
+    // const u = await riot.fetchFullPlayerProfile('sALU LER GA SAVA', 'CPP', 'euw1');
+    // if (!u) throw new Error('fuck it');
+    // const t = await riot.fetchRankedStats(u.summoner.id, 'euw1');
+    // console.log(t);
 }
 
 bootstrap().catch((err) => {

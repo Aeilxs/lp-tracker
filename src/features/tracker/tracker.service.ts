@@ -1,3 +1,4 @@
+import { QUEUE_ID } from '@features/riot/constants';
 import { MatchV5 } from '@features/riot/dtos';
 import { RiotService } from '@features/riot/riot.service';
 import { LoggerService } from '@logger/logger.service';
@@ -41,7 +42,10 @@ export class TrackerService {
         }
     }
 
-    private async synchronizePlayer(puuid: string): Promise<void> {
+    private async synchronizePlayer(
+        puuid: string,
+        queue: QUEUE_ID.RANKED_SOLO_5x5 | QUEUE_ID.RANKED_FLEX_SR,
+    ): Promise<void> {
         // Step 1: Load the player from the database using their PUUID
         const player = await this.playerRepo.findOne(puuid);
         if (!player) {
@@ -55,6 +59,8 @@ export class TrackerService {
         if (!freshRankedState) {
             this.logger.warn('Failed to fetch');
         }
+
+        const oldRankedState = player.ranked;
     }
 
     private createSnapshot(player: Pick<Player, 'puuid' | 'ranked'>, match: MatchV5.MatchDTO): RankedSnapshot | null {

@@ -148,7 +148,12 @@ export class RiotService {
      * @param count - Number of match IDs to fetch (1-100) (per queue)
      * @returns ["matchId1", "matchId2", ...] or null if the request fails
      */
-    async fetchRecentRankedMatchIds(puuid: string, region: string, count: number = 10): Promise<string[] | null> {
+    async fetchRecentRankedMatchIds(
+        puuid: string,
+        region: string,
+        queue: QUEUE_ID,
+        count: number = 10,
+    ): Promise<string[] | null> {
         const host = this.getRegionalHost(region);
         if (!host) {
             this.loggerService.warn(`Unknown host for region: ${region}`);
@@ -160,7 +165,7 @@ export class RiotService {
             const res = await firstValueFrom(
                 this.http.get<string[]>(url, {
                     params: {
-                        queue: QUEUE_ID.RANKED_SOLO_5x5,
+                        queue: queue,
                         count,
                     },
                 }),
