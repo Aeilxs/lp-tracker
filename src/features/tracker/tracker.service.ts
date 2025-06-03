@@ -86,7 +86,7 @@ export class TrackerService {
             soloQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
             flexQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
         };
-        const oldRankedState = player.ranked; // to calculate lp deltas after
+        const oldRankedState = player.ranked;
 
         // Step 4: Update player ranked info
         void this.playerRepo.updateRankedState(player.puuid, freshRankedState);
