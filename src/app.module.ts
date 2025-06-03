@@ -11,6 +11,7 @@ import { PlayerPersistenceModule } from '@persistence/player/player.module';
 
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
+import { NotificationsModule } from './features/notifications/notifications.module';
 import { RiotModule } from './features/riot/riot.module';
 import { LoggerModule } from './logger/logger.module';
 
@@ -29,6 +30,7 @@ import { LoggerModule } from './logger/logger.module';
         // Persistence modules
         PlayerPersistenceModule,
         GuildPersistenceModule,
+        NotificationsModule,
     ],
     controllers: [],
     providers: [],

@@ -1,12 +1,12 @@
+import { NotificationsService } from '@features/notifications/notifications.service';
 import { QUEUE_ID, QUEUE_TYPE } from '@features/riot/constants';
-import { RankedInfoDTO } from '@features/riot/dtos';
 import { RiotService } from '@features/riot/riot.service';
 import { LoggerService } from '@logger/logger.service';
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { GuildRepository } from '@persistence/guild/guild.repository';
 import { PlayerRepository } from '@persistence/player/player.repository';
-import { RankedSnapshot } from '@persistence/player/player.schema';
+import { RankedSnapshot, RankedState } from '@persistence/player/player.schema';
 
 @Injectable()
 export class TrackerService {
@@ -14,6 +14,7 @@ export class TrackerService {
         private readonly riotService: RiotService,
         private readonly playerRepo: PlayerRepository,
         private readonly guildRepo: GuildRepository,
+        private readonly notificationService: NotificationsService,
         private readonly logger: LoggerService,
     ) {}
 
@@ -81,7 +82,7 @@ export class TrackerService {
             return;
         }
 
-        const freshRankedState = {
+        const freshRankedState: RankedState = {
             soloQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
             flexQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
         };
@@ -102,17 +103,14 @@ export class TrackerService {
         }
         void this.playerRepo.addSnapshot(player.puuid, snapshot);
 
-        console.log(oldRankedState);
+        await this.notificationService.analyzeMatch(oldRankedState, freshRankedState, player, match, queue);
     }
 
     private createSnapshot(
         puuid: string,
         matchId: string,
         queue: QUEUE_TYPE,
-        rank: {
-            soloQ: RankedInfoDTO | undefined;
-            flexQ: RankedInfoDTO | undefined;
-        },
+        rank: RankedState,
     ): RankedSnapshot | null {
         const info = queue === QUEUE_TYPE.RANKED_SOLO_5x5 ? rank.soloQ : rank.flexQ;
         if (!info) {

@@ -1,4 +1,4 @@
-// interactionFactory.ts – enhanced mock for ChatInputCommandInteraction
+// interactionFactory.ts - enhanced mock for ChatInputCommandInteraction
 // -----------------------------------------------------------------------------
 // DX improvements:
 //  • Named args map → no order dependency.
