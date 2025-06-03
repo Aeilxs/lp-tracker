@@ -46,11 +46,7 @@ export interface MatchAnalysis {
 /* -------------------------------------------------------------------------- */
 /*                        Internal helper / shared types                      */
 /* -------------------------------------------------------------------------- */
-/**
- * We only need a minimal subset of the ranked info to detect promo/démo.
- * This small helper type lets us accept both RankedInfo (schema) **and**
- * RankedInfoDTO (API) - or any other look‑alike — without cumbersome casting.
- */
+
 export type RankedComparable = {
     tier?: string;
     rank?: string;
@@ -75,13 +71,8 @@ export class NotificationsService {
         match: MatchV5.MatchDTO,
         queue: QUEUE_ID,
     ): Promise<void> {
-        // 1) Build analysis payload
         const analysis = this.buildMatchAnalysis(before, after, player, match, queue);
-
-        // 2) Format message (simple text for now - you can swap to embeds later)
         const message = this.formatSummary(player, analysis);
-
-        // 3) Publish to every guild that tracks this player
         await this.publishToGuilds(player.puuid, message);
     }
 
@@ -179,14 +170,21 @@ export class NotificationsService {
 
         let promoStr = '';
         if (a.promoted) promoStr = 'PROMOTED';
-        else promoStr = 'DEMOTED';
+        else if (a.demoted) promoStr = 'DEMOTED';
+
+        if (a.role === 'UTILITY') a.role = 'SUPPORT';
 
         return (
-            `**${player.gameName}#${player.tagLine}** - ${outcome} - ${promoStr}\n` +
-            `• ${a.kills}/${a.deaths}/${a.assists} KDA (${a.kda}) - ${a.championName} (${a.role})\n` +
-            `• CS: ${a.cs} (${a.csPerMin}/min) - Gold: ${a.goldEarned}\n` +
-            `• Damage: ${a.damageDealtToChampions}\n` +
-            `• ${lpPart}`
+            '```diff\n' +
+            `${a.win ? '+' : '-'} - ${outcome} - ${promoStr}\n` +
+            '```\n' +
+            '```ascii\n' +
+            `${player.gameName}#${player.tagLine}\n` +
+            `- ${a.kills}/${a.deaths}/${a.assists} KDA (${a.kda}) - ${a.championName} (${a.role})\n` +
+            `- CS: ${a.cs} (${a.csPerMin}/min) - Gold: ${a.goldEarned}\n` +
+            `- Damage: ${a.damageDealtToChampions}\n` +
+            `- ${lpPart}\n` +
+            '```'
         );
     }
 

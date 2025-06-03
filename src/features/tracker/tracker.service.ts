@@ -18,7 +18,7 @@ export class TrackerService {
         private readonly logger: LoggerService,
     ) {}
 
-    @Cron(CronExpression.EVERY_30_SECONDS)
+    @Cron(CronExpression.EVERY_MINUTE)
     async handleCron(): Promise<void> {
         this.logger.verbose('[Tracker] Cron polling started');
         await this.poll();

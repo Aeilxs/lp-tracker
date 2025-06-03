@@ -10,11 +10,12 @@ export async function publishSlashCommands(
     clientId: string,
     testGuildId: string | undefined,
     commandRegistry: CommandRegistryService,
+    isDev = true,
 ) {
     const rest = new REST({ version: '10' }).setToken(token);
     const commandData = commandRegistry.getAll().map((cmd) => cmd.data.toJSON());
 
-    const isTest = !!testGuildId; // lol why not
+    const isTest = isDev && !!testGuildId;
     const route = isTest
         ? Routes.applicationGuildCommands(clientId, testGuildId)
         : Routes.applicationCommands(clientId);
