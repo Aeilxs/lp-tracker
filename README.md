@@ -9,3 +9,15 @@ docker compose up -d    # start
 docker compose down     # stoppe sans supprimer le volume
 docker compose down -v  # supprime aussi le volume
 ```
+
+Connect to Mongo db container :
+
+```sh
+docker exec -it lp_tracker_mongo /bin/bash
+```
+
+Authentificate to the db inside the container:
+
+```sh
+mongosh -u root -p root
+```
