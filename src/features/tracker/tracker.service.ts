@@ -1,12 +1,12 @@
-import { QUEUE_ID } from '@features/riot/constants';
-import { MatchV5 } from '@features/riot/dtos';
+import { QUEUE_ID, QUEUE_TYPE } from '@features/riot/constants';
+import { RankedInfoDTO } from '@features/riot/dtos';
 import { RiotService } from '@features/riot/riot.service';
 import { LoggerService } from '@logger/logger.service';
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { GuildRepository } from '@persistence/guild/guild.repository';
 import { PlayerRepository } from '@persistence/player/player.repository';
-import { Player, RankedSnapshot } from '@persistence/player/player.schema';
+import { RankedSnapshot } from '@persistence/player/player.schema';
 
 @Injectable()
 export class TrackerService {
@@ -31,7 +31,7 @@ export class TrackerService {
 
             for (const [i, puuid] of puuids.entries()) {
                 this.logger.verbose(`[Tracker] [${i + 1}/${puuids.length}] Synchronizing: ${puuid}`);
-                await this.synchronizePlayer(puuid);
+                await this.synchronizePlayer(puuid, QUEUE_ID.RANKED_SOLO_5x5);
             }
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -54,18 +54,85 @@ export class TrackerService {
         }
         this.logger.verbose(`[Tracker] Loaded player: ${player.gameName}#${player.tagLine}`);
 
-        // Step 2: Fetch new ranked state
-        const freshRankedState = await this.riotService.fetchRankedStats(player.puuid, player.region);
-        if (!freshRankedState) {
-            this.logger.warn('Failed to fetch');
+        // Step 2: Check if player got new match
+        const res = await this.riotService.fetchRecentRankedMatchIds(player.puuid, player.region, queue, 1);
+        if (!res) {
+            this.logger.error('[Tracker] Failed to retrieve last match ID');
+            return;
+        }
+        const newMatchId = res[0];
+
+        const existingMatchIds = new Set(player.snapshots.map((s) => s.matchId));
+        if (existingMatchIds.has(newMatchId)) {
+            this.logger.verbose(`No new match for ${player.gameName}#${player.tagLine}`);
+            return;
         }
 
-        const oldRankedState = player.ranked;
+        // Step 3: Fetch all we need
+        const match = await this.riotService.fetchMatchById(newMatchId, player.region);
+        if (!match) {
+            this.logger.error('[Tracker] Failed to retrieve match');
+            return;
+        }
+
+        const freshRankedData = await this.riotService.fetchRankedStats(player.summonerId, player.region);
+        if (!freshRankedData?.length) {
+            this.logger.error('[Tracker] Failed to fetch fresh ranked state.');
+            return;
+        }
+
+        const freshRankedState = {
+            soloQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
+            flexQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
+        };
+        const oldRankedState = player.ranked; // to calculate lp deltas after
+
+        // Step 4: Update player ranked info
+        void this.playerRepo.updateRankedState(player.puuid, freshRankedState);
+        const snapshot = this.createSnapshot(
+            player.puuid,
+            newMatchId,
+            this.queueIdToQueueType(queue),
+            freshRankedState,
+        );
+
+        if (!snapshot) {
+            this.logger.error(`Snapshot creation error: ${snapshot}`);
+            return;
+        }
+        void this.playerRepo.addSnapshot(player.puuid, snapshot);
+
+        console.log(oldRankedState);
     }
 
-    private createSnapshot(player: Pick<Player, 'puuid' | 'ranked'>, match: MatchV5.MatchDTO): RankedSnapshot | null {
-        console.log(player, match);
-        return null;
+    private createSnapshot(
+        puuid: string,
+        matchId: string,
+        queue: QUEUE_TYPE,
+        rank: {
+            soloQ: RankedInfoDTO | undefined;
+            flexQ: RankedInfoDTO | undefined;
+        },
+    ): RankedSnapshot | null {
+        const info = queue === QUEUE_TYPE.RANKED_SOLO_5x5 ? rank.soloQ : rank.flexQ;
+        if (!info) {
+            throw new Error('RankedInfo is undefined for the selected queue type');
+        }
+        return {
+            matchId,
+            queueType: queue,
+            timestamp: new Date(),
+            snapshot: info,
+        };
+    }
+
+    private queueIdToQueueType(id: QUEUE_ID): QUEUE_TYPE {
+        switch (id) {
+            case QUEUE_ID.RANKED_SOLO_5x5:
+                return QUEUE_TYPE.RANKED_SOLO_5x5;
+            case QUEUE_ID.RANKED_FLEX_SR:
+                return QUEUE_TYPE.RANKED_FLEX_SR;
+        }
     }
 
     private async getAllPuuids(): Promise<string[]> {
