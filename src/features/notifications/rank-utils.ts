@@ -20,8 +20,35 @@ const TIERS_ORDER = [
 const DIVISION_ORDER = ['IV', 'III', 'II', 'I'];
 
 export class RankUtils {
+    static computeRankScore(rank: RankedComparable): number | null {
+        if (!rank?.tier || !rank?.rank || rank.leaguePoints === undefined) return null;
+
+        const tierIndex = TIERS_ORDER.indexOf(rank.tier);
+        if (tierIndex === -1) return null;
+
+        const base = tierIndex * 400; // 4 divisions * 100 LP per tier
+        const divisionIndex = DIVISION_ORDER.indexOf(rank.rank);
+        const divisionOffset = divisionIndex !== -1 ? (3 - divisionIndex) * 100 : 0;
+
+        return base + divisionOffset + rank.leaguePoints;
+    }
+
     static lpDelta(before: RankedComparable, after: RankedComparable): number | null {
-        if (!before?.leaguePoints || !after?.leaguePoints) return null;
+        if (!before || !after) return null;
+        if (before.leaguePoints === undefined || after.leaguePoints === undefined) return null;
+
+        const promotion = this.isPromotion(before, after);
+        const demotion = this.isDemotion(before, after);
+
+        if (promotion) {
+            return after.leaguePoints + (100 - before.leaguePoints);
+        }
+
+        if (demotion) {
+            return after.leaguePoints - 100;
+        }
+
+        // Même tier + division
         return after.leaguePoints - before.leaguePoints;
     }
 
@@ -51,5 +78,11 @@ export class RankUtils {
 
     static isRankedTierWithDivisions(tier: string): boolean {
         return ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND'].includes(tier);
+    }
+
+    static formatRank(tier?: string, rank?: string, lp?: number, delta?: number | null): string {
+        if (!tier || !rank || lp == null) return 'Rank N/A';
+        const deltaStr = delta != null && delta !== 0 ? ` (Δ = ${delta > 0 ? '+' : ''}${delta} LP)` : '';
+        return `${tier} ${rank} ${lp} LP${deltaStr}`;
     }
 }

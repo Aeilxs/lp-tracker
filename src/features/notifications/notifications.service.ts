@@ -136,26 +136,28 @@ export class NotificationsService {
 
     private formatSummary(player: Player, a: MatchAnalysis): string {
         const outcome = a.win ? 'VICTORY' : 'DEFEAT';
-        const lpChange = a.lpDelta !== null ? `${a.lpDelta >= 0 ? '+' : ''}${a.lpDelta} LP` : 'LP N/A';
-        const rankFmt =
-            a.tierAfter && a.rankAfter && a.lpAfter !== null
-                ? `${a.tierAfter} ${a.rankAfter} ${a.lpAfter} LP (${lpChange})`
-                : 'Rank N/A';
+        const rankFmt = RankUtils.formatRank(
+            a.tierAfter as string,
+            a.rankAfter as string,
+            a.lpAfter as number,
+            a.lpDelta as number,
+        );
 
         let promoStr = '';
         if (a.promoted) promoStr = 'PROMOTED';
         else if (a.demoted) promoStr = 'DEMOTED';
 
         if (a.role === 'UTILITY') a.role = 'SUPPORT';
+        if (a.role === 'BOTTOM') a.role = 'ADC';
         const kpFmt = a.kp !== null ? `${a.kp}%` : 'N/A';
         const gameDurationMin = Math.round(((a.rawParticipant?.timePlayed ?? 0) || 0) / 60);
 
         return (
             '```diff\n' +
-            `${a.win ? '+' : '-'}  ${outcome} - ${promoStr}\n` +
-            `> ${player.gameName}#${player.tagLine} ${rankFmt}\n` +
+            `${a.win ? '+' : '-'} ${player.gameName}#${player.tagLine} ${outcome} ${a.win ? '+' : '-'} ${promoStr}\n` +
+            `> ${rankFmt}\n` +
             `> Duration: ${gameDurationMin} min\n` +
-            `> ${a.kills}/${a.deaths}/${a.assists} - KDA / KP (${a.kda} / ${kpFmt}) - ${a.championName} (${a.role})\n` +
+            `> ${a.kills}/${a.deaths}/${a.assists} - KDA|KP (${a.kda} | ${kpFmt}) - ${a.championName} (${a.role})\n` +
             `> Damage: ${a.damageDealtToChampions}\n` +
             `> CS: ${a.cs} (${a.csPerMin}/min) - Gold: ${a.goldEarned}\n` +
             `> Vision: Pink wards: ${a.pinksBought} - Vision score (${a.visionScore})\n` +
