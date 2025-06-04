@@ -6,27 +6,26 @@ import { Injectable } from '@nestjs/common';
 import { GuildRepository } from '@persistence/guild/guild.repository';
 import { Player, RankedState } from '@persistence/player/player.schema';
 
+import { RankedComparable, RankUtils } from './rank-utils';
+
 /**
- * Rich object returned by analyseMatch() so TrackerService can decide what to do next.
+ * object returned by analyseMatch()
  */
 export interface MatchAnalysis {
-    /** Riot match ID */
     matchId: string;
-    /** Queue (solo/flex) the match was played in */
     queueType: QUEUE_TYPE;
-    /** Did the player win? */
     win: boolean;
-    /** Basic combat stats */
     kills: number;
     deaths: number;
     assists: number;
     kda: number;
-    /** Creep score & economy */
+    kp: number | null;
     cs: number;
     csPerMin: number;
     goldEarned: number;
     damageDealtToChampions: number;
-    /** Ranked progression */
+    pinksBought: number;
+    visionScore: number;
     lpBefore: number | null;
     lpAfter: number | null;
     lpDelta: number | null;
@@ -36,22 +35,10 @@ export interface MatchAnalysis {
     rankAfter: string | null;
     promoted: boolean;
     demoted: boolean;
-    /** Cosmetic */
     championName: string;
     role: string;
-    /** Full DTO for further processing if needed */
     rawParticipant: MatchV5.ParticipantDTO | null;
 }
-
-/* -------------------------------------------------------------------------- */
-/*                        Internal helper / shared types                      */
-/* -------------------------------------------------------------------------- */
-
-export type RankedComparable = {
-    tier?: string;
-    rank?: string;
-    leaguePoints?: number;
-} | null;
 
 @Injectable()
 export class NotificationsService {
@@ -61,9 +48,6 @@ export class NotificationsService {
         private readonly logger: LoggerService,
     ) {}
 
-    /**
-     * Main entry point called from TrackerService. Performs analysis & dispatch.
-     */
     async analyzeMatch(
         before: RankedState,
         after: RankedState,
@@ -75,10 +59,6 @@ export class NotificationsService {
         const message = this.formatSummary(player, analysis);
         await this.publishToGuilds(player.puuid, message);
     }
-
-    /* -------------------------------------------------------------------------- */
-    /*                           Internal helper logic                            */
-    /* -------------------------------------------------------------------------- */
 
     private buildMatchAnalysis(
         before: RankedState,
@@ -95,7 +75,12 @@ export class NotificationsService {
             throw new Error(fmt);
         }
 
-        // Combat / farming stats
+        const teamId = participant.teamId;
+        const teamParticipants = match.info.participants.filter((p) => p.teamId === teamId);
+
+        const teamKills = teamParticipants.reduce((sum, p) => sum + (p.kills ?? 0), 0);
+
+        /* CBT/FARM */
         const kills = participant.kills ?? 0;
         const deaths = participant.deaths ?? 0;
         const assists = participant.assists ?? 0;
@@ -103,17 +88,21 @@ export class NotificationsService {
         const cs = (participant.totalMinionsKilled ?? 0) + (participant.neutralMinionsKilled ?? 0);
         const minutes = (match.info.gameDuration || 0) / 60;
         const csPerMin = minutes ? cs / minutes : 0;
+        const kp = teamKills > 0 ? Math.round(((kills + assists) / teamKills) * 100) : null;
 
-        // Ranked delta (handle undefined)
+        /* VISION */
+        const pinksBought = participant.visionWardsBoughtInGame;
+        const visionScore = participant.visionScore;
+
+        /* RANK */
         const beforeInfo = queueType === QUEUE_TYPE.RANKED_SOLO_5x5 ? before.soloQ : before.flexQ;
         const afterInfo = queueType === QUEUE_TYPE.RANKED_SOLO_5x5 ? after.soloQ : after.flexQ;
 
         const lpBefore = beforeInfo?.leaguePoints ?? null;
         const lpAfter = afterInfo?.leaguePoints ?? null;
-        const lpDelta = lpBefore !== null && lpAfter !== null ? lpAfter - lpBefore : null;
-
-        const promoted = this.isPromotion(beforeInfo as RankedComparable, afterInfo as RankedComparable);
-        const demoted = this.isDemotion(beforeInfo as RankedComparable, afterInfo as RankedComparable);
+        const lpDelta = RankUtils.lpDelta(beforeInfo as RankedComparable, afterInfo as RankedComparable);
+        const promoted = RankUtils.isPromotion(beforeInfo as RankedComparable, afterInfo as RankedComparable);
+        const demoted = RankUtils.isDemotion(beforeInfo as RankedComparable, afterInfo as RankedComparable);
 
         return {
             matchId: match.metadata.matchId,
@@ -122,7 +111,10 @@ export class NotificationsService {
             kills,
             deaths,
             assists,
+            pinksBought,
+            visionScore,
             kda: Math.round(kda * 100) / 100,
+            kp,
             cs,
             csPerMin: Math.round(csPerMin * 100) / 100,
             goldEarned: participant.goldEarned ?? 0,
@@ -142,64 +134,46 @@ export class NotificationsService {
         };
     }
 
-    /* ------------------------------ Promo / démo ------------------------------ */
-    private isPromotion(before: RankedComparable, after: RankedComparable): boolean {
-        if (!before || !after) return false;
-        return (
-            after.tier !== before.tier ||
-            (after.tier === before.tier &&
-                after.rank !== before.rank &&
-                (after.leaguePoints ?? 0) > (before.leaguePoints ?? 0))
-        );
-    }
-
-    private isDemotion(before: RankedComparable, after: RankedComparable): boolean {
-        if (!before || !after) return false;
-        return (
-            after.tier !== before.tier ||
-            (after.tier === before.tier &&
-                after.rank !== before.rank &&
-                (after.leaguePoints ?? 0) < (before.leaguePoints ?? 0))
-        );
-    }
-
-    /* ---------------------------- Message formatting --------------------------- */
     private formatSummary(player: Player, a: MatchAnalysis): string {
         const outcome = a.win ? 'VICTORY' : 'DEFEAT';
-        const lpPart = a.lpDelta !== null ? `${a.lpDelta >= 0 ? '+' : ''}${a.lpDelta} LP` : 'LP N/A';
+        const lpChange = a.lpDelta !== null ? `${a.lpDelta >= 0 ? '+' : ''}${a.lpDelta} LP` : 'LP N/A';
+        const rankFmt =
+            a.tierAfter && a.rankAfter && a.lpAfter !== null
+                ? `${a.tierAfter} ${a.rankAfter} ${a.lpAfter} LP (${lpChange})`
+                : 'Rank N/A';
 
         let promoStr = '';
         if (a.promoted) promoStr = 'PROMOTED';
         else if (a.demoted) promoStr = 'DEMOTED';
 
         if (a.role === 'UTILITY') a.role = 'SUPPORT';
+        const kpFmt = a.kp !== null ? `${a.kp}%` : 'N/A';
+        const gameDurationMin = Math.round(((a.rawParticipant?.timePlayed ?? 0) || 0) / 60);
 
         return (
             '```diff\n' +
-            `${a.win ? '+' : '-'} - ${outcome} - ${promoStr}\n` +
-            '```\n' +
-            '```ascii\n' +
-            `${player.gameName}#${player.tagLine}\n` +
-            `- ${a.kills}/${a.deaths}/${a.assists} KDA (${a.kda}) - ${a.championName} (${a.role})\n` +
-            `- CS: ${a.cs} (${a.csPerMin}/min) - Gold: ${a.goldEarned}\n` +
-            `- Damage: ${a.damageDealtToChampions}\n` +
-            `- ${lpPart}\n` +
+            `${a.win ? '+' : '-'}  ${outcome} - ${promoStr}\n` +
+            `> ${player.gameName}#${player.tagLine} ${rankFmt}\n` +
+            `> Duration: ${gameDurationMin} min\n` +
+            `> ${a.kills}/${a.deaths}/${a.assists} - KDA / KP (${a.kda} / ${kpFmt}) - ${a.championName} (${a.role})\n` +
+            `> Damage: ${a.damageDealtToChampions}\n` +
+            `> CS: ${a.cs} (${a.csPerMin}/min) - Gold: ${a.goldEarned}\n` +
+            `> Vision: Pink wards: ${a.pinksBought} - Vision score (${a.visionScore})\n` +
             '```'
         );
     }
 
-    /* --------------------------- Discord publishing --------------------------- */
     private async publishToGuilds(puuid: string, content: string): Promise<void> {
         const guilds = await this.guildRepo.findAll();
         const targetGuilds = guilds.filter((g) => g.puuids.includes(puuid));
 
-        console.log('CONTENT: \n', content);
+        this.logger.log('CONTENT: \n');
+        console.log(content);
         for (const g of targetGuilds) {
             await this.discordService.sendToTrackingChannel(g.guildId, content);
         }
     }
 
-    /* ------------------------------- Utilities -------------------------------- */
     private queueIdToQueueType(id: QUEUE_ID): QUEUE_TYPE {
         return id === QUEUE_ID.RANKED_FLEX_SR ? QUEUE_TYPE.RANKED_FLEX_SR : QUEUE_TYPE.RANKED_SOLO_5x5;
     }
