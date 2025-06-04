@@ -84,7 +84,7 @@ export class TrackerService {
 
         const freshRankedState: RankedState = {
             soloQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
-            flexQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_SOLO_5x5),
+            flexQ: freshRankedData.find((a) => a.queueType === QUEUE_TYPE.RANKED_FLEX_SR),
         };
         const oldRankedState = player.ranked;
 
